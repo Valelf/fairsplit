@@ -1,0 +1,218 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Mail, Loader2, CheckCircle2, KeyRound } from "lucide-react";
+
+export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Password login (for development)
+  async function handlePasswordLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    const supabase = createClient();
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+      return;
+    }
+
+    // Fetch user role and redirect
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", data.user.id)
+      .single();
+
+    const role = profile?.role || "tenant";
+
+    if (role === "admin") {
+      router.push("/dashboard/admin/dashboard");
+    } else if (role === "owner") {
+      router.push("/dashboard/owner/dashboard");
+    } else {
+      router.push("/dashboard/tenant/dashboard");
+    }
+  }
+
+  // Magic link login (production)
+  async function handleMagicLinkLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    const supabase = createClient();
+
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/confirm`,
+      },
+    });
+
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+    } else {
+      setSent(true);
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold">FairSplit</CardTitle>
+          <CardDescription>
+            Fair utility bill splitting for shared housing
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {sent ? (
+            <div className="flex flex-col items-center gap-4 py-4">
+              <CheckCircle2 className="h-12 w-12 text-green-500" />
+              <div className="text-center">
+                <p className="font-medium">Check your email</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  We sent a magic link to <strong>{email}</strong>
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Click the link in the email to sign in.
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setSent(false);
+                  setEmail("");
+                }}
+              >
+                Try a different email
+              </Button>
+            </div>
+          ) : (
+            <Tabs defaultValue="password" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="password">Password</TabsTrigger>
+                <TabsTrigger value="magic-link">Magic Link</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="password" className="mt-4">
+                <form onSubmit={handlePasswordLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email-password">Email address</Label>
+                    <Input
+                      id="email-password"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+
+                  {error && (
+                    <p className="text-sm text-destructive">{error}</p>
+                  )}
+
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <KeyRound className="mr-2 h-4 w-4" />
+                    )}
+                    Sign In
+                  </Button>
+
+                  <div className="text-xs text-center text-muted-foreground space-y-1">
+                    <p className="font-medium">Test Accounts:</p>
+                    <p>Admin: admin@example.com</p>
+                    <p>Owner: shekar@example.com</p>
+                    <p>Tenant: val@example.com</p>
+                    <p className="mt-1">Password: demo123!</p>
+                  </div>
+                </form>
+              </TabsContent>
+
+              <TabsContent value="magic-link" className="mt-4">
+                <form onSubmit={handleMagicLinkLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email-magic">Email address</Label>
+                    <Input
+                      id="email-magic"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+
+                  {error && (
+                    <p className="text-sm text-destructive">{error}</p>
+                  )}
+
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Mail className="mr-2 h-4 w-4" />
+                    )}
+                    Send Magic Link
+                  </Button>
+
+                  <p className="text-xs text-center text-muted-foreground">
+                    No password required. We&apos;ll send you a secure login
+                    link.
+                  </p>
+                </form>
+              </TabsContent>
+            </Tabs>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "575 McKinney - Utility Bills",
-  description: "Tenants' utility bills dashboard",
+  title: "FairSplit — Fair Utility Bill Splitting",
+  description: "Multi-tenant SaaS platform for fair utility bill splitting between landlords and tenants",
 };
 
 export default function RootLayout({
