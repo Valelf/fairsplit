@@ -40,6 +40,7 @@
     --input: 158 10% 79%; /* #C9D3CF */
     --ring: 168 83% 26%;
     --radius: 0.625rem;
+    --brand: 168 83% 26%; /* fixed logo teal, same in both themes */
 
     /* App shell: the ink rail */
     --rail: 165 33% 9%;
@@ -112,6 +113,10 @@
   :focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
+  /* Numbers in tables line up by default. */
+  table {
+    font-variant-numeric: tabular-nums;
+  }
   ::selection {
     @apply bg-accent text-accent-foreground;
   }
@@ -121,7 +126,7 @@
   /* Money, day counts, rates: mono with tabular figures so columns line up. */
   .figure {
     @apply font-mono tabular-nums;
-    font-feature-settings: "tnum", "zero";
+    font-feature-settings: "tnum";
   }
 }
 

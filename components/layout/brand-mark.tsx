@@ -16,7 +16,7 @@ export function BrandGlyph({ className }: BrandGlyphProps) {
       focusable="false"
       className={cn("h-7 w-7 shrink-0", className)}
     >
-      <rect x="1" y="1" width="26" height="26" rx="7" className="fill-primary" />
+      <rect x="1" y="1" width="26" height="26" rx="7" className="fill-brand" />
       <path d="M14 6v16" stroke="white" strokeWidth="2" strokeLinecap="round" />
       <path
         d="M7 10h4M7 14h4M7 18h2M17 10h4M17 14h3M17 18h4"

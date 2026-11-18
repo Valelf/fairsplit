@@ -56,7 +56,7 @@ export function BillSplitTable({
       <CardContent className="px-0 pb-0 sm:px-0 sm:pb-0">
         <Table>
           <TableHeader>
-            <TableRow className="bg-muted/50 hover:bg-muted/50">
+            <TableRow className="bg-muted hover:bg-muted">
               <TableHead className="sticky left-0 z-10 min-w-32 bg-muted align-bottom">
                 Tenant
               </TableHead>
@@ -110,7 +110,7 @@ export function BillSplitTable({
             })}
 
             {/* Totals row */}
-            <TableRow className="border-t-2 border-foreground/15 bg-accent/60 font-semibold hover:bg-accent/60">
+            <TableRow className="border-t-2 border-foreground/15 bg-accent font-semibold hover:bg-accent">
               <TableCell className="sticky left-0 z-10 bg-accent">
                 Total
               </TableCell>

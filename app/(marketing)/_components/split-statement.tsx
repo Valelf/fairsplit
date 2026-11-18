@@ -94,7 +94,7 @@ export function SplitStatement({
                         <span
                           key={d}
                           className={cn(
-                            "h-4 origin-bottom rounded-sm motion-safe:animate-cell-in",
+                            "h-4 origin-bottom rounded-[0.125rem] motion-safe:animate-cell-in",
                             present ? "bg-primary" : "bg-muted"
                           )}
                           style={{ animationDelay: `${150 + d * 18 + row * 40}ms` }}
