@@ -9,18 +9,18 @@ import {
   Legend,
 } from "recharts";
 import type { CategoryBreakdown } from "@/lib/queries/analytics";
+import {
+  chartLegendStyle,
+  chartSeries,
+  chartTooltipItemStyle,
+  chartTooltipLabelStyle,
+  chartTooltipStyle,
+  formatDollarsExact,
+} from "@/components/shared/chart-theme";
 
 interface CategoryBreakdownChartProps {
   data: CategoryBreakdown[];
 }
-
-const COLORS = [
-  "hsl(var(--primary))",
-  "hsl(var(--chart-2, 200 70% 50%))",
-  "hsl(var(--chart-3, 150 60% 45%))",
-  "hsl(var(--chart-4, 40 80% 55%))",
-  "hsl(var(--chart-5, 280 60% 55%))",
-];
 
 export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
   const chartData = data.map((d) => ({
@@ -30,41 +30,40 @@ export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
 
   if (chartData.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[300px] text-sm text-muted-foreground">
+      <div className="flex h-64 items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground">
         No category data yet
       </div>
     );
   }
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <PieChart>
-        <Pie
-          data={chartData}
-          cx="50%"
-          cy="50%"
-          labelLine={false}
-          outerRadius={100}
-          fill="#8884d8"
-          dataKey="value"
-          label={({ name, percent }) =>
-            `${name} ${((percent ?? 0) * 100).toFixed(0)}%`
-          }
-        >
-          {chartData.map((_, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-          ))}
-        </Pie>
-        <Tooltip
-          formatter={(value) => [`$${Number(value).toFixed(2)}`, "Amount"]}
-          contentStyle={{
-            backgroundColor: "hsl(var(--card))",
-            borderColor: "hsl(var(--border))",
-            borderRadius: "8px",
-          }}
-        />
-        <Legend />
-      </PieChart>
-    </ResponsiveContainer>
+    <div className="h-64 w-full sm:h-72">
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={chartData}
+            cx="50%"
+            cy="45%"
+            innerRadius="50%"
+            outerRadius="80%"
+            paddingAngle={2}
+            dataKey="value"
+            stroke="hsl(var(--card))"
+            strokeWidth={2}
+          >
+            {chartData.map((_, index) => (
+              <Cell key={`cell-${index}`} fill={chartSeries[index % chartSeries.length]} />
+            ))}
+          </Pie>
+          <Tooltip
+            formatter={(value, name) => [formatDollarsExact(Number(value)), name]}
+            contentStyle={chartTooltipStyle}
+            itemStyle={chartTooltipItemStyle}
+            labelStyle={chartTooltipLabelStyle}
+          />
+          <Legend iconType="circle" iconSize={8} wrapperStyle={chartLegendStyle} />
+        </PieChart>
+      </ResponsiveContainer>
+    </div>
   );
 }
