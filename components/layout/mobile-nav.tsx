@@ -11,6 +11,7 @@ import {
   Users,
   Settings,
   Shield,
+  Wallet,
 } from "lucide-react";
 
 interface NavItem {
@@ -31,6 +32,8 @@ function getNavItems(role: UserRole): NavItem[] {
       return [
         { label: "Dashboard", href: "/dashboard/owner/dashboard", icon: LayoutDashboard },
         { label: "Properties", href: "/dashboard/owner/properties", icon: Building2 },
+        { label: "Payments", href: "/dashboard/owner/payments", icon: Wallet },
+        { label: "Settings", href: "/dashboard/owner/settings", icon: Settings },
       ];
     case "tenant":
       return [

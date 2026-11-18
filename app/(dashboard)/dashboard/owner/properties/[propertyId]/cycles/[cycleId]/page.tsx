@@ -9,6 +9,7 @@ import Link from "next/link";
 import { BillSplitTable } from "@/components/shared/bill-split-table";
 import { PdfViewerLink } from "@/components/shared/pdf-viewer-link";
 import { DownloadInvoiceButton } from "@/components/shared/download-invoice-button";
+import { CyclePaymentsPanel } from "@/components/owner/cycle-payments-panel";
 
 interface PageProps {
   params: { propertyId: string; cycleId: string };
@@ -130,6 +131,8 @@ export default async function CycleDetailPage({ params }: PageProps) {
           ))}
         </div>
       )}
+
+      <CyclePaymentsPanel propertyId={params.propertyId} cycleId={cycle.id} />
 
       {/* Invoice Downloads */}
       {bills && bills.length > 0 && tenants && tenants.length > 0 && (
