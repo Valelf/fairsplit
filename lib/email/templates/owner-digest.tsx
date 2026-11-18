@@ -27,7 +27,7 @@ export function OwnerDigestEmail(p: OwnerDigestEmailProps) {
   return (
     <EmailLayout
       preview={ownerDigestSubject(p)}
-      footer="You get this digest when tenants mark payments as paid. Turn it off in Settings. FairSplit never handles money."
+      footer="You get this daily digest only on days when tenants mark payments as paid. FairSplit never handles money."
     >
       <Heading1>Payments to confirm</Heading1>
       <Paragraph>Hi {p.ownerName},</Paragraph>
