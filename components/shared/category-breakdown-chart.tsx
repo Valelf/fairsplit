@@ -8,6 +8,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
+import { ChartFrame } from "@/components/shared/chart-frame";
 import type { CategoryBreakdown } from "@/lib/queries/analytics";
 import {
   chartLegendStyle,
@@ -37,7 +38,7 @@ export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
   }
 
   return (
-    <div className="h-64 w-full sm:h-72">
+    <ChartFrame label="Spending by category">
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
@@ -64,6 +65,6 @@ export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
           <Legend iconType="circle" iconSize={8} wrapperStyle={chartLegendStyle} />
         </PieChart>
       </ResponsiveContainer>
-    </div>
+    </ChartFrame>
   );
 }
