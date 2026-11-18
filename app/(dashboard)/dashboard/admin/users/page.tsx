@@ -1,5 +1,6 @@
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+import Link from "next/link";
+import { requireAdminPage } from "@/lib/server/admin-guard";
+import { CompStatusBadge } from "@/components/admin/comp-status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -29,28 +30,17 @@ const roleIcon: Record<UserRole, React.ReactNode> = {
 };
 
 export default async function AdminUsersPage() {
-  const supabase = createClient();
+  const { supabase, userId: viewerId } = await requireAdminPage();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) redirect("/login");
-
-  // Verify admin role
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (profile?.role !== "admin") redirect("/login");
-
-  // Fetch all users
-  const { data: users } = await supabase
-    .from("profiles")
-    .select("*")
-    .order("created_at", { ascending: true });
+  // Fetch all users and their active subscriptions
+  const [{ data: users }, { data: subs }] = await Promise.all([
+    supabase.from("profiles").select("*").order("created_at", { ascending: true }),
+    supabase
+      .from("user_subscriptions")
+      .select("user_id, comp_until, subscription_plans(name)")
+      .eq("status", "active"),
+  ]);
+  const subByUser = new Map((subs || []).map((s) => [s.user_id, s]));
 
   const allUsers = users || [];
   const adminCount = allUsers.filter((u) => u.role === "admin").length;
@@ -90,21 +80,32 @@ export default async function AdminUsersPage() {
         </CardHeader>
         <CardContent>
           {allUsers.length > 0 ? (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
+                  <TableHead>Plan</TableHead>
                   <TableHead>Joined</TableHead>
                   <TableHead className="w-[60px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {allUsers.map((u) => (
+                {allUsers.map((u) => {
+                  const sub = subByUser.get(u.id);
+                  const planName =
+                    (sub?.subscription_plans as unknown as { name: string } | null)?.name ?? "Plan";
+                  return (
                   <TableRow key={u.id}>
                     <TableCell className="font-medium">
-                      {u.full_name}
+                      <Link
+                        href={`/dashboard/admin/users/${u.id}`}
+                        className="rounded-sm underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        {u.full_name || u.email}
+                      </Link>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {u.email}
@@ -115,6 +116,15 @@ export default async function AdminUsersPage() {
                         {u.role}
                       </Badge>
                     </TableCell>
+                    <TableCell>
+                      {sub ? (
+                        <CompStatusBadge planName={planName} compUntil={sub.comp_until} />
+                      ) : (
+                        <span className="text-sm text-muted-foreground">
+                          {u.role === "owner" ? "No plan" : "—"}
+                        </span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-muted-foreground">
                       {formatDate(u.created_at)}
                     </TableCell>
@@ -123,12 +133,15 @@ export default async function AdminUsersPage() {
                         userId={u.id}
                         userName={u.full_name}
                         currentRole={u.role as UserRole}
+                        disabled={u.id === viewerId}
                       />
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
+            </div>
           ) : (
             <p className="text-sm text-muted-foreground text-center py-8">
               No users found.
