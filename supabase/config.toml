@@ -1,26 +1,19 @@
-[project]
-id = "fairsplit"
-name = "FairSplit"
+# Supabase CLI config for FairSplit.
+# Only auth URL/sign-up settings are declared, so `supabase config push` changes nothing else.
+project_id = "fairsplit"
 
 [auth]
 enabled = true
-site_url = "http://localhost:3000"
-additional_redirect_urls = ["http://localhost:3000/auth/callback", "http://localhost:3000/auth/confirm"]
+# Production app. Magic links fall back here when a redirect isn't allow-listed.
+site_url = "https://fairsplit-hymavar.vercel.app"
+additional_redirect_urls = [
+  "https://fairsplit-hymavar.vercel.app/**",
+  "https://fairsplit-hymavar-*-hymavar-val.vercel.app/**",
+  "http://localhost:3000/**",
+]
 
 [auth.email]
 enable_signup = true
-double_confirm_changes = false
-enable_confirmations = false
-
-[auth.external.google]
-enabled = false
-
-[db]
-port = 54322
-major_version = 15
-
-[storage]
-enabled = true
-
-[realtime]
-enabled = true
+# Must stay true: claim_invite relies on email_confirmed_at proving the invitee owns the email.
+enable_confirmations = true
+double_confirm_changes = true

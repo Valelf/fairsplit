@@ -26,7 +26,7 @@ export function Topbar({ profile, onMobileMenuToggle }: TopbarProps) {
   async function handleSignOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
-    router.push("/login");
+    window.location.assign("/login"); // full load clears the previous user's cached layout
   }
 
   const initials = profile.full_name
@@ -56,7 +56,7 @@ export function Topbar({ profile, onMobileMenuToggle }: TopbarProps) {
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+          <Button variant="ghost" className="relative h-8 w-8 rounded-full" aria-label="Account menu">
             <Avatar className="h-8 w-8">
               <AvatarFallback className="text-xs">{initials}</AvatarFallback>
             </Avatar>

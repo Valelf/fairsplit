@@ -53,11 +53,11 @@ export default function LoginPage() {
     const role = profile?.role || "tenant";
 
     if (role === "admin") {
-      router.push("/dashboard/admin/dashboard");
+      window.location.assign("/dashboard/admin/dashboard"); // full load: no cached layout from a previous session
     } else if (role === "owner") {
-      router.push("/dashboard/owner/dashboard");
+      window.location.assign("/dashboard/owner/dashboard"); // full load: no cached layout from a previous session
     } else {
-      router.push("/dashboard/tenant/dashboard");
+      window.location.assign("/dashboard/tenant/dashboard"); // full load: no cached layout from a previous session
     }
   }
 

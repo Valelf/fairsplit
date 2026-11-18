@@ -1,185 +1,95 @@
 # FairSplit — Session Handoff
 
-> **For Claude:** Read this file at the start of every new session to understand project state and continue where we left off.
+> **For Claude:** Read this at the start of every session. Then check the project memory for account rules.
 
----
+_Last updated: 18 Nov 2026 (end of Phase 0)_
 
-## Project State: Phase 1 Complete, Local Dev Running
+## Where things stand
 
-Phase 1 is fully functional. The app runs locally at http://localhost:3000 with Supabase as the backend. All core features (auth, property management, billing cycles, bill splitting, tenant views) are working. The initial setup is done — migrations applied, users seeded, demo data loaded.
+**Phase 0 (make it safe) is done.** The app is deployed and the database has been rebuilt from migrations, with security fixes verified against the live project.
 
----
+| | |
+|---|---|
+| Live app | https://fairsplit-hymavar.vercel.app (Vercel team `hymavar-val`, project `fairsplit-hymavar`) |
+| Database | Supabase project `pvpsoxfpoifxcmvcdmdo` ("FairSplit", us-east-1, personal org) |
+| Repo | `Valelf/fairsplit`, branch `fairsplit-phase-1` |
+| Old McKinney app (favour for Shekar) | https://mckinney-bills-575.vercel.app, branch `mckinney-legacy-update`, worktree `../FairSplit-legacy` |
 
-## What Has Been Accomplished
+**Accounts are personal only** (GitHub Valelf, Supabase vvrsvallabh, Vercel `hymavar-val`). The default Vercel CLI login on this machine is a different account. Always pass:
+`--global-config C:/Users/vvrsv/.vercel-personal --scope hymavar-val`
 
-### Phase 1 (Complete)
+## Roadmap
 
-**Infrastructure & Auth**
-- Next.js 14 App Router project with TypeScript, Tailwind CSS, shadcn/ui
-- Supabase PostgreSQL backend with 11 tables and full RLS policies
-- Authentication system with password login (dev) and magic link (production)
-- Middleware-enforced role-based routing for admin, owner, and tenant roles
-- Tenant invite flow with claim tokens
+| Phase | Dates | Goal |
+|---|---|---|
+| P0 Make it safe | to 30 Nov 2026 | **Done** |
+| P1 Shekar pilot live | 1–21 Dec 2026 | Shekar's houses and real tenant logins; December bills settled in the app |
+| P2 Private beta | 4 Jan – 14 Feb 2027 | Owner sign-up, rooms, recurring bills, AI ingest, 3–5 more landlords |
+| P3 Paid launch | 15 Feb – 4 Apr 2027 | Stripe, plan limits, marketing site |
 
-**Database**
-- 6 migrations applied: initial schema, seed plans, trigger functions, RLS recursion fix, bill flags enhancements, cross-table RLS recursion fix
-- 11 tables: profiles, subscription_plans, user_subscriptions, properties, property_tenants, billing_cycles, bills, bill_splits, bill_flags, notifications, audit_log
-- `SECURITY DEFINER` function `is_admin()` to prevent infinite RLS recursion across all admin policies
-- Complete seed data for 575 McKinney demo property
+Detail lives in the plan and mock-ups (private artifacts; links are in the project memory).
 
-**Owner Dashboard**
-- Property CRUD (create, update, soft delete)
-- Tenant invite system with email-based invitations
-- Tenant status tracking (invited, active, departed)
-- Billing cycle management (draft, open, closed)
-- Manual bill entry with category selection (internet, electricity, water, other)
-- Automatic person-days split calculation on bill creation
+### Next up (Phase 1)
+1. Real emails for Shekar and the McKinney tenants: put them in `scripts/pilot/pilot-data.local.json` (gitignored), or edit them in the app once an edit screen exists.
+2. Payment tracking: a status on each split (owed → marked paid → confirmed), balances, due dates, the owner's Venmo/Zelle/Cash App handles.
+3. Owner screens for actions that already exist on the server: close a cycle, edit/delete a bill, mark a tenant departed, edit a property (Frisco address). Recalculate splits when tenant dates change, in one transaction.
+4. "Your bills are ready" email through Resend, with a custom SMTP sender for Supabase auth emails. The built-in sender is rate-limited.
+5. Connect the GitHub repo to the Vercel project for auto-deploys. Today deploys run from the CLI.
 
-**Tenant Dashboard**
-- Read-only bill viewing grouped by billing cycle
-- Bill details with person-days breakdown
-- Invite claim flow via token URL
-- Settings page (scaffold)
+## Phase 0: what changed
 
-**Admin Dashboard**
-- Route scaffold created (dashboard, properties, users pages exist)
-- No functional admin features yet
+**Database** (`supabase/migrations/20261118*`)
+- `profiles.role` and `profiles.email` can only be changed by an admin or the service role (trigger). Sign-up metadata can no longer set a role; new users start as `tenant`.
+- Removed the open `WITH CHECK (true)` inserts on profiles, notifications and audit_log.
+- Flags can only be raised on bills the tenant can see. Departed tenants only see bills that started before their leave date.
+- Added constraints, invite expiry (30 days), cycle `start_date`/`end_date`, and `user_subscriptions.comp_until` for the founding plan.
+- New RPCs: `get_invite` (public), `claim_invite` (the signed-in user's verified email must match the invite), `ping` (keep-alive).
+- New private `bill-pdfs` storage bucket with policies; nightly `pg_cron` job `fairsplit-nightly`.
 
-**UI/Layout**
-- 19 shadcn/ui components installed
-- Responsive sidebar with role-based navigation
-- Topbar with user menu and logout
-- Mobile drawer navigation
-- Dashboard shell layout wrapper
-- Shared components: bill-split-table, metric-card
-- Notification bell UI (scaffold)
+**App**
+- Split rounding uses largest remainder, so shares always add up to the bill. Covered by Vitest tests, including the corrected 575 McKinney numbers.
+- `createNotification`, `notifyUser` and `calculateAndStoreSplits` moved to `lib/server/*`, so browsers can't call them.
+- `/auth/confirm` handles both the PKCE `?code=` and `token_hash` link styles, plus a safe `?next=`.
+- The claim flow works end to end. Owners get a copyable invite link; no email is sent yet.
+- Demo credentials removed from the login page. Full page load after sign-in and sign-out, so the previous user's menu isn't shown. Date and empty-list query fixes.
 
-**Server Actions**
-- `lib/actions/properties.ts` — Property CRUD with Zod validation
-- `lib/actions/tenants.ts` — Invite, claim, update tenants
-- `lib/actions/cycles.ts` — Billing cycle CRUD
-- `lib/actions/bills.ts` — Bill creation with automatic person-days split calculation
-- `lib/actions/notifications.ts` — Scaffold
+**Tooling**
+- `npm run check` runs typecheck, lint and tests.
+- GitHub Actions: `ci.yml`, and `supabase-keepalive.yml`, which pings every 3 days (repo secrets `SUPABASE_URL` and `SUPABASE_ANON_KEY`).
+- Supabase auth URLs are managed in `supabase/config.toml` and applied with `npx supabase@3.2.0 config push --yes`.
 
-**Documentation**
-- 21 context documents: 10 PRDs, 4 tech specs, 2 product discovery, 1 competitor analysis, 4 reference docs
-- `CLAUDE.md` with project coding standards
-- This handoff document
+## Database workflow (no Docker on this machine)
 
-### Bugs Fixed
-- **RLS infinite recursion — admin self-reference** (`004_fix_rls_recursion.sql`): Admin policies on all 12 tables referenced `profiles` via inline subquery, which triggered `profiles`' own admin policies recursively. Fixed by creating a `SECURITY DEFINER` function `public.is_admin()` that bypasses RLS.
-- **RLS infinite recursion — cross-table cycle** (`006_fix_cross_table_rls_recursion.sql`): `properties` had a tenant policy querying `property_tenants`, and `property_tenants` had owner policies querying `properties`. Postgres evaluates all SELECT policies (OR'd), creating infinite recursion. Fixed by creating two `SECURITY DEFINER` functions — `is_property_owner(property_id)` and `is_property_tenant(property_id)` — and updating all cross-table policies to use them.
-
----
-
-## What's Left to Build
-
-### Phase 2 (Not Started)
-- [ ] PDF bill upload + Claude AI parsing (`ANTHROPIC_API_KEY`)
-- [ ] Invoice PDF generation for tenants
-- [ ] Email notifications via Resend (`RESEND_API_KEY`)
-- [ ] Bill flagging & escalation system (DB tables exist, UI not built)
-- [ ] Dashboard charts & analytics (recharts installed, not wired)
-- [ ] In-app notifications (DB table + bell UI exist, realtime not connected)
-- [ ] Admin dashboard functionality
-
-### Phase 3 (Not Started)
-- [ ] Stripe payment processing (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`)
-- [ ] Subscription plan enforcement
-- [ ] Full admin platform (user management, property oversight)
-- [ ] Landing page / marketing site
-- [ ] Mobile responsiveness audit
-- [ ] Audit logging and CSV export
-- [ ] Performance optimization
-- [ ] Deployment to Vercel
-
----
-
-## Key Information
-
-### Supabase Project
-- **Dashboard**: https://supabase.com/dashboard/project/pvpsoxfpoifxcmvcdmdo
-- **Project URL**: https://pvpsoxfpoifxcmvcdmdo.supabase.co
-- **API Keys**: https://supabase.com/dashboard/project/pvpsoxfpoifxcmvcdmdo/settings/api
-
-### Test Accounts
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | `SEED_ADMIN_EMAIL` (default admin@example.com) | `SEED_ADMIN_PASSWORD` (default demo123!) |
-| Owner | shekar@example.com | demo123! |
-| Tenant (active) | val@example.com | demo123! |
-| Tenant (active) | navya@example.com | demo123! |
-| Tenant (active) | vineesh@example.com | demo123! |
-| Tenant (active) | divya@example.com | demo123! |
-| Tenant (departed) | anil@example.com | demo123! |
-
-### User Preferences
-- Password auth enabled for dev testing; magic link for production
-- Admin account is set via `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` in `.env.local` (never commit real credentials)
-- Amounts stored as integers (cents) in database, formatted to dollars at presentation
-- Dates handled in UTC
-
----
-
-## Setup Steps (For Fresh Environment)
-
-### 1. Install dependencies
 ```bash
-npm install
+npm run db:backup -- ../FairSplit-backups/<date>.json   # JSON export of all app tables
+npm run db:rebuild -- --yes                             # DESTRUCTIVE: wipe + apply all migrations
+npm run seed:pilot                                      # admin, Shekar (founding plan), McKinney + Frisco, Sept–Nov 2025
+npm run db:security-check                               # live RLS checks as real users
 ```
+- These scripts connect through the session pooler using `SUPABASE_DB_PASSWORD` from `.env.local`.
+- To add a migration: create `supabase/migrations/<timestamp>_name.sql`. The rebuild script applies migrations in order and records them in the CLI migration history.
+- There is no incremental "apply only new migrations" script yet; add one before the pilot holds real data.
 
-### 2. Create `.env.local`
-```
-NEXT_PUBLIC_SUPABASE_URL=https://pvpsoxfpoifxcmvcdmdo.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<from Supabase dashboard>
-SUPABASE_SERVICE_ROLE_KEY=<from Supabase dashboard>
-```
+## Accounts in the seeded database
 
-### 3. Run database migrations (in Supabase SQL Editor, in order)
-1. `supabase/migrations/001_initial_schema.sql`
-2. `supabase/migrations/002_seed_plans.sql`
-3. `supabase/migrations/003_functions.sql`
-4. `supabase/migrations/004_fix_rls_recursion.sql`
-5. `supabase/migrations/005_bill_flags_enhancements.sql`
-6. `supabase/migrations/006_fix_cross_table_rls_recursion.sql`
+- Passwords are in `.env.local` (`SEED_ADMIN_PASSWORD`, `SEED_DEMO_PASSWORD`). Never commit them; the repo is public.
+- Admin: the `SEED_ADMIN_EMAIL` account.
+- Owner: `shekar@example.com` (placeholder until the real email is known). Pro plan, comped until 2027-11-18.
+- Tenants (575 McKinney): `navya@`, `vineesh@`, `val@`, `divya@` (active) and `anil@` (departed), all `@example.com`.
+- Frisco house: no tenants yet; the address is a placeholder.
 
-### 4. Create test users
-```bash
-npm run seed:users
-```
+## Known gaps / cleanup
 
-### 5. Seed demo data
-Run `supabase/seed.sql` in Supabase SQL Editor
+- `supabase/seed.sql` and `scripts/seed-users.ts` are obsolete; `seed-pilot.ts` replaces them. Delete both files. The seed.sql file contains the old wrong numbers.
+- `app/_legacy/` is excluded from typecheck and lint; delete it when convenient.
+- PDF parsing needs `ANTHROPIC_API_KEY` in Vercel and `.env.local`; it isn't set yet. Email needs `RESEND_API_KEY`.
+- Roles are still one per profile, so a person can't be both owner and tenant. Memberships move to per-property roles in Phase 2.
+- The DB password was shared in chat on 18 Nov. Rotate it in the Supabase dashboard, then update `.env.local`.
 
-### 6. Start dev server
-```bash
-npm run dev
-```
-Open http://localhost:3000
+## Architecture decisions
 
----
-
-## Key Files for Context
-
-| File | Purpose |
-|------|---------|
-| `CLAUDE.md` | Project coding standards |
-| `context/IMPLEMENTATION_PLAN.md` | Detailed progress tracker |
-| `supabase/migrations/001_initial_schema.sql` | Full database schema + RLS |
-| `supabase/migrations/004_fix_rls_recursion.sql` | RLS recursion fix |
-| `supabase/seed.sql` | 575 McKinney demo data |
-| `lib/actions/*.ts` | All server-side business logic |
-| `lib/calculations/person-days.ts` | Core bill splitting algorithm |
-| `middleware.ts` | Auth + role-based route protection |
-| `context/seed-data/575-mckinney-property-data.md` | Test data reference |
-
----
-
-## Architectural Decisions
-
-1. **Calculation on write, not read** — Bill splits pre-calculated and stored in `bill_splits` table when a bill is created
-2. **Denormalized `property_id`** — On bills, bill_splits, and other child tables for efficient RLS policy evaluation
-3. **Server actions for mutations** — API routes only for file uploads, webhooks, and streaming
-4. **`SECURITY DEFINER` for RLS checks** — `is_admin()`, `is_property_owner(id)`, and `is_property_tenant(id)` bypass RLS to prevent cross-table recursion
-5. **Amounts in cents** — All monetary values stored as integers to avoid floating-point issues
-6. **Atomic design** — Components organized as atoms (ui/), molecules/organisms (shared/), with role-specific directories (owner/, tenant/, admin/)
+1. Splits are calculated when a bill is written and stored in `bill_splits`; only tenants with more than 0 days get a row.
+2. `property_id` is denormalized on child tables for RLS.
+3. Server actions handle mutations. API routes are only for uploads, PDFs and webhooks.
+4. `SECURITY DEFINER` helpers (`is_admin`, `is_property_owner`, `is_property_tenant`, `tenant_can_see_*`) avoid RLS recursion.
+5. Money is stored in cents and dates are UTC.
