@@ -95,6 +95,36 @@ async function signIn(email: string) {
   check("owner cannot link a user account to a tenancy directly", !!hijack.error, hijack.error?.message);
   if (hijack.data?.length) await service.from("property_tenants").delete().eq("id", hijack.data[0].id);
 
+  // ---- Split rules (bill_split_exclusions) ----
+  // Only the exclusion rows are touched (no recalculation), and they're removed right away.
+  const { data: mckBill } = await service.from("bills").select("id").eq("property_id", mck!.id).limit(1).single();
+  const { data: navyaPt } = await service
+    .from("property_tenants").select("id").eq("property_id", mck!.id).eq("tenant_id", navya.uid).single();
+  const tenantExcl = await navya.c
+    .from("bill_split_exclusions").insert({ bill_id: mckBill!.id, property_tenant_id: navyaPt!.id }).select();
+  check("tenant cannot create split exclusions", !!tenantExcl.error || !tenantExcl.data?.length, tenantExcl.error?.message);
+  if (tenantExcl.data?.length) await service.from("bill_split_exclusions").delete().eq("bill_id", mckBill!.id);
+  const ownerExcl = await shekar.c
+    .from("bill_split_exclusions")
+    .insert({ bill_id: mckBill!.id, property_tenant_id: navyaPt!.id, reason: "security-check probe" })
+    .select();
+  try {
+    check("owner can exclude a tenant from a bill", !ownerExcl.error, ownerExcl.error?.message);
+    const { data: seen } = await navya.c.from("bill_split_exclusions").select("bill_id").eq("bill_id", mckBill!.id);
+    check("tenant can read their property's exclusions", (seen ?? []).length === 1, `${seen?.length} rows`);
+    const { data: anonSeen } = await anonClient.from("bill_split_exclusions").select("bill_id");
+    check("anonymous sees no exclusions", (anonSeen ?? []).length === 0);
+    const { data: fTenant } = await service.from("property_tenants").select("id").eq("property_id", frisco!.id).limit(1).maybeSingle();
+    if (fTenant) {
+      const crossExcl = await shekar.c
+        .from("bill_split_exclusions").insert({ bill_id: mckBill!.id, property_tenant_id: fTenant.id }).select();
+      check("exclusion cannot name another property's tenant", !!crossExcl.error, crossExcl.error?.message);
+      if (crossExcl.data?.length) await service.from("bill_split_exclusions").delete().eq("property_tenant_id", fTenant.id);
+    }
+  } finally {
+    await service.from("bill_split_exclusions").delete().eq("bill_id", mckBill!.id);
+  }
+
   // A landlord demoted by an admin must not be able to promote themselves back.
   const demotedEmail = `demoted-probe-${Date.now()}@example.com`;
   const demotedPw = crypto.randomUUID();
