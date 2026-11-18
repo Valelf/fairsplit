@@ -37,7 +37,7 @@ export async function updateSession(request: NextRequest) {
 
   // Public routes that don't require auth
   // /api/cron authenticates with CRON_SECRET inside the route handler.
-  const publicRoutes = ["/", "/login", "/signup", "/auth/confirm", "/api/auth/callback", "/claim", "/api/cron"];
+  const publicRoutes = ["/", "/login", "/signup", "/auth/confirm", "/api/auth/callback", "/claim", "/api/cron", "/how-it-works", "/help", "/terms", "/privacy", "/resources", "/manifest.webmanifest", "/apple-icon"];
   const isPublicRoute = publicRoutes.some(
     (route) => pathname === route || pathname.startsWith(route + "/")
   );
