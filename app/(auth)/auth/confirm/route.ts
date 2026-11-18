@@ -16,7 +16,15 @@ export async function GET(request: NextRequest) {
   const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
   const nextParam = searchParams.get("next");
-  const next = nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : null;
+  // Same-site relative paths only. Browsers treat "\" like "/", so "/\evil.com" would be a
+  // protocol-relative redirect off-site; reject backslashes and control characters too.
+  const next =
+    nextParam &&
+    nextParam.startsWith("/") &&
+    !nextParam.startsWith("//") &&
+    !/[\\\u0000-\u001f\u007f]/.test(nextParam)
+      ? nextParam
+      : null;
 
   const supabase = createClient();
   let ok = false;

@@ -7,19 +7,30 @@ import { createNotification } from "@/lib/server/notifications";
 import { calculateAndStoreSplits, recalculateBillSplits } from "@/lib/server/splits";
 import { revalidatePropertyPages } from "@/lib/server/revalidate";
 
-const createBillSchema = z.object({
-  cycle_id: z.string().uuid(),
-  property_id: z.string().uuid(),
-  category: z.enum(BILL_CATEGORY_VALUES),
-  provider: z.string().min(1, "Provider name is required"),
-  amount_cents: z.number().int().positive("Amount must be positive"),
-  service_start: z.string().min(1, "Service start date is required"),
-  service_end: z.string().min(1, "Service end date is required"),
-  source: z.enum(["manual", "pdf_parsed"]).default("manual"),
-  pdf_storage_path: z.string().optional(),
-  notes: z.string().optional(),
-  utility_account_id: z.string().uuid().optional().nullable(),
-});
+const createBillSchema = z
+  .object({
+    cycle_id: z.string().uuid(),
+    property_id: z.string().uuid(),
+    category: z.enum(BILL_CATEGORY_VALUES),
+    provider: z.string().trim().min(1, "Provider name is required").max(120),
+    amount_cents: z.number().int().positive("Amount must be positive").max(100_000_000),
+    service_start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use a valid start date"),
+    service_end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use a valid end date"),
+    source: z.enum(["manual", "pdf_parsed"]).default("manual"),
+    pdf_storage_path: z.string().max(300).optional(),
+    notes: z.string().max(1000).optional(),
+    utility_account_id: z.string().uuid().optional().nullable(),
+  })
+  .refine((v) => v.service_start <= v.service_end, {
+    message: "Service end can't be before service start",
+  })
+  // Uploads are stored as "<property_id>/<file>" (see /api/bills/upload-pdf).
+  .refine(
+    (v) =>
+      !v.pdf_storage_path ||
+      (v.pdf_storage_path.startsWith(`${v.property_id}/`) && !v.pdf_storage_path.includes("..")),
+    { message: "Invalid PDF reference" }
+  );
 
 export type CreateBillInput = z.infer<typeof createBillSchema>;
 
@@ -45,11 +56,22 @@ export async function createBill(input: CreateBillInput) {
     .select("id")
     .eq("id", parsed.data.property_id)
     .eq("owner_id", user.id)
+    .is("deleted_at", null)
     .single();
 
   if (!property) {
     return { error: "Property not found or access denied" };
   }
+
+  // The cycle must belong to this property and still be editable.
+  const { data: targetCycle } = await supabase
+    .from("billing_cycles")
+    .select("id, status")
+    .eq("id", parsed.data.cycle_id)
+    .eq("property_id", parsed.data.property_id)
+    .maybeSingle();
+  if (!targetCycle) return { error: "Billing cycle not found" };
+  if (targetCycle.status === "closed") return { error: "Reopen the cycle before adding bills" };
 
   // A linked utility account must belong to the same property
   if (parsed.data.utility_account_id) {

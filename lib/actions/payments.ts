@@ -54,6 +54,16 @@ export async function markCyclePaid(input: z.infer<typeof markPaidSchema>): Prom
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const { cycleId, propertyId, note } = parsed.data;
 
+  // propertyId is client-supplied and only used for the owner notification: it must be the
+  // cycle's own property, or a tenant of two houses could notify the wrong landlord.
+  const { data: ownCycle } = await supabase
+    .from("billing_cycles")
+    .select("id")
+    .eq("id", cycleId)
+    .eq("property_id", propertyId)
+    .maybeSingle();
+  if (!ownCycle) return { error: "Cycle not found" };
+
   const { data: count, error } = await supabase.rpc("mark_cycle_paid", {
     p_cycle_id: cycleId,
     p_note: note || null,

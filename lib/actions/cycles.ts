@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
 import { createNotification } from "@/lib/server/notifications";
 import { revalidatePropertyPages } from "@/lib/server/revalidate";
+import { recalculateBillSplits } from "@/lib/server/splits";
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use a valid date");
 
@@ -161,6 +162,13 @@ export async function reopenCycle(cycleId: string) {
     .update({ status: "open", updated_at: new Date().toISOString() })
     .eq("id", cycle.id);
   if (error) return { error: error.message };
+
+  // Tenant-date changes skip closed cycles; catch this cycle's splits up now that it's open.
+  const { data: bills } = await supabase.from("bills").select("id").eq("cycle_id", cycle.id);
+  for (const bill of bills ?? []) {
+    const splitError = await recalculateBillSplits(bill.id);
+    if (splitError) return { error: `Cycle reopened, but re-splitting bills failed: ${splitError}` };
+  }
 
   revalidatePropertyPages(cycle.property_id);
   return { success: true };

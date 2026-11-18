@@ -11,7 +11,7 @@ const addTenantSchema = z.object({
   property_id: z.string().uuid(),
   email: z.string().email("Valid email is required"),
   display_name: z.string().min(1, "Name is required"),
-  join_date: z.string().min(1, "Join date is required"),
+  join_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Join date is required"),
 });
 
 export type AddTenantInput = z.infer<typeof addTenantSchema>;
@@ -38,6 +38,7 @@ export async function addTenant(input: AddTenantInput) {
     .select("id")
     .eq("id", parsed.data.property_id)
     .eq("owner_id", user.id)
+    .is("deleted_at", null)
     .single();
 
   if (!property) {
@@ -241,12 +242,14 @@ export async function previewTenantDates(
       .select("id, cycle_id, category, provider, amount_cents, service_start, service_end")
       .eq("property_id", tenant.property_id)
       .order("service_start"),
-    supabase.from("billing_cycles").select("id, label").eq("property_id", tenant.property_id),
+    supabase.from("billing_cycles").select("id, label, status").eq("property_id", tenant.property_id),
   ]);
   const cycleLabel = new Map((cycles ?? []).map((c) => [c.id, c.label]));
+  // Closed cycles are final: tenant-date changes don't re-split them (recalculate_property_splits).
+  const closedCycles = new Set((cycles ?? []).filter((c) => c.status === "closed").map((c) => c.id));
 
   const rows = previewTenantDateChange(
-    (bills ?? []).map((b) => ({
+    (bills ?? []).filter((b) => !closedCycles.has(b.cycle_id)).map((b) => ({
       billId: b.id,
       label: `${cycleLabel.get(b.cycle_id) ?? ""} · ${b.provider} (${b.category})`,
       amountCents: b.amount_cents,

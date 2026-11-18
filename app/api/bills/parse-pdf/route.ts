@@ -50,7 +50,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  // Rate limit (in-memory, per user)
+  // Paid AI call: landlords (and admins) only, never tenants.
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  if (profile?.role !== "owner" && profile?.role !== "admin") {
+    return NextResponse.json({ error: "Only landlords can parse bills" }, { status: 403 });
+  }
+
+  // Rate limit
   const rateCheck = checkRateLimit(`parse-pdf:${user.id}`);
   if (!rateCheck.allowed) {
     return NextResponse.json(
