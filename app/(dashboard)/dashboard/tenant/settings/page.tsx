@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { User, Mail, Calendar, Shield } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { EmailRemindersToggle } from "@/components/shared/email-reminders-toggle";
 
 export default async function TenantSettingsPage() {
   const supabase = createClient();
@@ -83,6 +84,9 @@ export default async function TenantSettingsPage() {
               </label>
               <p className="text-sm">{formatDate(profile.created_at)}</p>
             </div>
+            <Separator />
+            <EmailRemindersToggle enabled={profile.email_reminders ?? true} />
+
           </CardContent>
         </Card>
 
