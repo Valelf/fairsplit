@@ -13,6 +13,8 @@ import { CyclePaymentsPanel } from "@/components/owner/cycle-payments-panel";
 import { CycleStatusActions } from "@/components/owner/cycle-status-actions";
 import { BillActions } from "@/components/owner/bill-actions";
 import { CycleNotifyPanel } from "@/components/owner/cycle-notify-panel";
+import { MonthlyBillsChecklist } from "@/components/owner/monthly-bills-checklist";
+import { getUtilityAccountsWithLastBill } from "@/lib/server/utility-accounts";
 
 interface PageProps {
   params: { propertyId: string; cycleId: string };
@@ -60,6 +62,16 @@ export default async function CycleDetailPage({ params }: PageProps) {
 
   const totalBilledCents =
     bills?.reduce((sum, b) => sum + b.amount_cents, 0) || 0;
+
+  // Utility accounts still missing a bill in this cycle (pre-filled "Add bill" links)
+  const utilityAccounts =
+    cycle.status !== "closed"
+      ? await getUtilityAccountsWithLastBill(params.propertyId, { activeOnly: true })
+      : [];
+  const checklist = utilityAccounts.map((a) => ({
+    ...a,
+    added: (bills ?? []).some((b) => b.utility_account_id === a.id),
+  }));
 
   return (
     <div className="space-y-6">
@@ -114,6 +126,15 @@ export default async function CycleDetailPage({ params }: PageProps) {
           </Button>
         )}
       </div>
+
+      {checklist.some((a) => !a.added) && (
+        <MonthlyBillsChecklist
+          propertyId={params.propertyId}
+          cycleId={cycle.id}
+          accounts={checklist}
+          cycle={{ start_date: cycle.start_date ?? null, end_date: cycle.end_date ?? null }}
+        />
+      )}
 
       {/* Bills Summary Cards */}
       {bills && bills.length > 0 && (
