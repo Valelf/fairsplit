@@ -135,11 +135,8 @@ export async function deleteProperty(propertyId: string, confirmName: string) {
     return { error: "Type the property name exactly to confirm" };
   }
 
-  const { error } = await supabase
-    .from("properties")
-    .update({ deleted_at: new Date().toISOString() })
-    .eq("id", id.data)
-    .eq("owner_id", user.id);
+  // RPC: a plain UPDATE is rejected by RLS (deleted rows fail the SELECT policy).
+  const { error } = await supabase.rpc("soft_delete_property", { p_property_id: id.data });
 
   if (error) {
     return { error: error.message };

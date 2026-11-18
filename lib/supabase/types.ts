@@ -387,6 +387,10 @@ export interface Database {
         Args: { p_property_id: string; p_from?: string | null };
         Returns: number;
       };
+      soft_delete_property: {
+        Args: { p_property_id: string };
+        Returns: undefined;
+      };
       can_manage_property_splits: {
         Args: { p_property_id: string };
         Returns: boolean;

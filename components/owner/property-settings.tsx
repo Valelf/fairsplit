@@ -159,8 +159,9 @@ export function PropertySettings({ property }: { property: EditableProperty }) {
         onConfirm={async () => {
           const result = await deleteProperty(property.id, confirmName);
           if (result.error) return result.error;
-          router.push("/dashboard/owner/properties");
-          router.refresh();
+          // Full load: this page 404s once the property is gone.
+          window.location.assign("/dashboard/owner/properties");
+          return false;
         }}
       >
         <div className="space-y-2">
