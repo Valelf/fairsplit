@@ -76,21 +76,21 @@ export function SplitRulesField({ tenants, value, onChange, amountCents, service
   }
 
   return (
-    <div className="space-y-4 rounded-md border p-4">
+    <div className="space-y-5 rounded-lg border bg-muted/20 p-3 sm:p-4">
       <fieldset className="space-y-2">
-        <legend className="text-sm font-medium">How to split</legend>
+        <legend className="mb-2 text-sm font-medium">How to split</legend>
         {METHODS.map((m) => (
-          <label key={m.value} className="flex cursor-pointer items-start gap-3 rounded-md p-2 hover:bg-muted/50">
+          <label key={m.value} className="flex cursor-pointer items-start gap-3 rounded-md border bg-background p-3 transition-colors hover:border-primary/40 has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-2 has-[:focus-visible]:ring-offset-background">
             <input
               type="radio"
               name={`${uid}-method`}
               value={m.value}
               checked={value.method === m.value}
               onChange={() => onChange({ ...value, method: m.value })}
-              className="mt-1 h-4 w-4 accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="mt-0.5 h-4 w-4 shrink-0 accent-primary focus-visible:outline-none"
             />
             <span>
-              <span className="block text-sm">{m.label}</span>
+              <span className="block text-sm font-medium">{m.label}</span>
               <span className="block text-xs text-muted-foreground">{m.hint}</span>
             </span>
           </label>
@@ -99,25 +99,25 @@ export function SplitRulesField({ tenants, value, onChange, amountCents, service
 
       {tenants.length > 0 && (
         <fieldset className="space-y-2">
-          <legend className="text-sm font-medium">Exclude from this bill</legend>
+          <legend className="mb-1 text-sm font-medium">Exclude from this bill</legend>
           <p className="text-xs text-muted-foreground">
             Leave someone out (e.g. they have their own internet plan). Their share goes to everyone else.
           </p>
-          <ul className="space-y-2">
+          <ul className="divide-y rounded-md border bg-background">
             {tenants.map((t) => {
               const excluded = t.id in value.exclusions;
               const boxId = `${uid}-ex-${t.id}`;
               return (
-                <li key={t.id} className="space-y-2">
+                <li key={t.id} className="space-y-2 px-3 py-2.5">
                   <div className="flex items-center gap-3">
                     <input
                       id={boxId}
                       type="checkbox"
                       checked={excluded}
                       onChange={(e) => toggle(t.id, e.target.checked)}
-                      className="h-4 w-4 accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="h-4 w-4 shrink-0 accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     />
-                    <Label htmlFor={boxId} className="font-normal">
+                    <Label htmlFor={boxId} className="cursor-pointer font-normal">
                       {t.display_name}
                     </Label>
                   </div>
@@ -145,23 +145,23 @@ export function SplitRulesField({ tenants, value, onChange, amountCents, service
       )}
 
       <div className="space-y-2" aria-live="polite">
-        <p className="text-sm font-medium">Preview</p>
+        <p className="text-sm font-medium">Live preview</p>
         {preview === null ? (
           <p className="text-xs text-muted-foreground">Enter the amount and service dates to preview the shares.</p>
         ) : sharers.length === 0 ? (
           <p className="text-xs text-muted-foreground">Nobody shares this bill with these settings.</p>
         ) : (
-          <ul className="divide-y rounded-md border text-sm">
+          <ul className="divide-y rounded-md border bg-background text-sm">
             {sharers.map((r) => (
               <li key={r.tenantId} className="flex items-center justify-between gap-3 px-3 py-2">
                 <span className="min-w-0 truncate">{names.get(r.tenantId) ?? "Tenant"}</span>
                 <span className="flex shrink-0 items-baseline gap-3">
-                  <span className="text-xs text-muted-foreground tabular-nums">
+                  <span className="font-mono text-xs tabular-nums text-muted-foreground">
                     {value.method === "equal_present"
                       ? `1 of ${r.shareCount} shares`
                       : `${r.personDays} of ${r.totalPersonDays} days`}
                   </span>
-                  <span className="font-medium tabular-nums">{formatCents(r.amountCents)}</span>
+                  <span className="font-mono font-medium tabular-nums">{formatCents(r.amountCents)}</span>
                 </span>
               </li>
             ))}

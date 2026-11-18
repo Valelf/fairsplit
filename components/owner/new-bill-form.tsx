@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, ArrowLeft, Sparkles, Info, Plug } from "lucide-react";
+import { Loader2, Sparkles, Info, Plug } from "lucide-react";
+import { PageHeading } from "@/components/layout/page-heading";
 import { createBill } from "@/lib/actions/bills";
 import type { BillCategory } from "@/lib/supabase/types";
 import { BILL_CATEGORY_OPTIONS, billCategoryLabel, isBillCategory } from "@/lib/utilities/categories";
@@ -218,22 +219,17 @@ export function NewBillForm({
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href={cycleHref} aria-label="Back to cycle">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Add Bill</h1>
-          <p className="text-muted-foreground">Enter the bill details to calculate splits</p>
-        </div>
-      </div>
+    <div className="mx-auto max-w-2xl space-y-6">
+      <PageHeading
+        backHref={cycleHref}
+        backLabel="Back to cycle"
+        title="Add Bill"
+        description="Enter the bill details to calculate splits"
+      />
 
       <Card>
         <CardHeader>
-          <CardTitle>Bill Details</CardTitle>
+          <CardTitle className="font-display text-lg">Bill Details</CardTitle>
           <CardDescription>
             All amounts are in dollars. Splits will be calculated automatically based on tenant
             occupancy.
@@ -243,7 +239,7 @@ export function NewBillForm({
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="utility_account" className="flex items-center gap-2">
-                <Plug className="h-3 w-3" aria-hidden="true" />
+                <Plug className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
                 Utility account
               </Label>
               {accounts.length > 0 ? (
@@ -283,7 +279,7 @@ export function NewBillForm({
                 </p>
               )}
               {prefillHint && (
-                <div className="flex items-start gap-2 rounded-md bg-muted px-3 py-2">
+                <div className="flex items-start gap-2 rounded-md border bg-muted/50 px-3 py-2">
                   <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                   <p className="text-sm text-muted-foreground">{prefillHint}</p>
                 </div>
@@ -322,8 +318,8 @@ export function NewBillForm({
                 </Button>
               )}
               {parseError && (
-                <div className="flex items-start gap-2 rounded-md bg-muted px-3 py-2">
-                  <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                <div className="flex items-start gap-2 rounded-md border bg-muted/50 px-3 py-2">
+                  <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                   <p className="text-sm text-muted-foreground">{parseError}</p>
                 </div>
               )}
@@ -433,18 +429,18 @@ export function NewBillForm({
             </div>
 
             {error && (
-              <p role="alert" className="text-sm text-destructive">
+              <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
                 {error}
               </p>
             )}
 
-            <div className="flex gap-3 pt-2">
+            <div className="flex flex-col-reverse gap-3 border-t pt-4 sm:flex-row sm:justify-end">
+              <Button variant="outline" type="button" asChild>
+                <Link href={cycleHref}>Cancel</Link>
+              </Button>
               <Button type="submit" disabled={loading}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Add Bill
-              </Button>
-              <Button variant="outline" type="button" asChild>
-                <Link href={cycleHref}>Cancel</Link>
               </Button>
             </div>
           </form>
