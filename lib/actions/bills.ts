@@ -7,6 +7,34 @@ import { createNotification } from "@/lib/server/notifications";
 import { calculateAndStoreSplits, recalculateBillSplits } from "@/lib/server/splits";
 import { revalidatePropertyPages } from "@/lib/server/revalidate";
 
+/** Split rules (Phase 2): how the bill is split, and who is left out of it. */
+const splitMethodSchema = z.enum(["person_days", "equal_present"]);
+const exclusionsSchema = z
+  .array(
+    z.object({
+      property_tenant_id: z.string().uuid(),
+      reason: z.string().trim().max(200).optional().nullable(),
+    })
+  )
+  .max(50);
+export type BillExclusionInput = z.infer<typeof exclusionsSchema>[number];
+
+/** Replace a bill's exclusions (tenant/property match is enforced by a DB trigger). */
+async function replaceExclusions(
+  supabase: ReturnType<typeof createClient>,
+  billId: string,
+  exclusions: BillExclusionInput[]
+): Promise<string | null> {
+  const { error: delError } = await supabase.from("bill_split_exclusions").delete().eq("bill_id", billId);
+  if (delError) return delError.message;
+  const unique = Array.from(new Map(exclusions.map((e) => [e.property_tenant_id, e])).values());
+  if (unique.length === 0) return null;
+  const { error } = await supabase.from("bill_split_exclusions").insert(
+    unique.map((e) => ({ bill_id: billId, property_tenant_id: e.property_tenant_id, reason: e.reason || null }))
+  );
+  return error ? error.message : null;
+}
+
 const createBillSchema = z
   .object({
     cycle_id: z.string().uuid(),
@@ -20,6 +48,8 @@ const createBillSchema = z
     pdf_storage_path: z.string().max(300).optional(),
     notes: z.string().max(1000).optional(),
     utility_account_id: z.string().uuid().optional().nullable(),
+    split_method: splitMethodSchema.optional(),
+    exclusions: exclusionsSchema.optional(),
   })
   .refine((v) => v.service_start <= v.service_end, {
     message: "Service end can't be before service start",
@@ -102,6 +132,7 @@ export async function createBill(input: CreateBillInput) {
       notes: parsed.data.notes || null,
       pdf_storage_path: parsed.data.pdf_storage_path || null,
       utility_account_id: parsed.data.utility_account_id || null,
+      split_method: parsed.data.split_method ?? "person_days",
       created_by: user.id,
     })
     .select()
@@ -109,6 +140,15 @@ export async function createBill(input: CreateBillInput) {
 
   if (billError) {
     return { error: billError.message };
+  }
+
+  if (parsed.data.exclusions?.length) {
+    const exclusionError = await replaceExclusions(supabase, bill.id, parsed.data.exclusions);
+    if (exclusionError) {
+      // Don't leave a half-configured bill behind.
+      await supabase.from("bills").delete().eq("id", bill.id);
+      return { error: `Couldn't save who is excluded: ${exclusionError}` };
+    }
   }
 
   // Calculate and store splits
@@ -226,6 +266,9 @@ const updateBillSchema = z
     service_start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use a valid start date"),
     service_end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use a valid end date"),
     notes: z.string().max(1000).optional().nullable(),
+    split_method: splitMethodSchema.optional(),
+    /** When given, replaces the bill's exclusions; omitted leaves them untouched. */
+    exclusions: exclusionsSchema.optional(),
   })
   .refine((v) => v.service_start <= v.service_end, {
     message: "Service end can't be before service start",
@@ -243,15 +286,22 @@ export async function updateBill(billId: string, input: UpdateBillInput) {
   const parsed = updateBillSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
+  const { exclusions, split_method, ...fields } = parsed.data;
   const { error } = await supabase
     .from("bills")
     .update({
-      ...parsed.data,
-      notes: parsed.data.notes || null,
+      ...fields,
+      ...(split_method ? { split_method } : {}),
+      notes: fields.notes || null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", bill.id);
   if (error) return { error: error.message };
+
+  if (exclusions) {
+    const exclusionError = await replaceExclusions(supabase, bill.id, exclusions);
+    if (exclusionError) return { error: `Bill saved, but who is excluded couldn't be updated: ${exclusionError}` };
+  }
 
   const splitError = await recalculateBillSplits(bill.id);
   if (splitError) return { error: `Bill saved, but re-splitting failed: ${splitError}` };
