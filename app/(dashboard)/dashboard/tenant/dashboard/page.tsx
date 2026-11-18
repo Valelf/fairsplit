@@ -4,6 +4,7 @@ import { MetricCard } from "@/components/shared/metric-card";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, DollarSign, Receipt } from "lucide-react";
 import { formatCents } from "@/lib/utils";
+import { summarizeSplits } from "@/lib/payments";
 import Link from "next/link";
 import { getTenantSpendingTrend } from "@/lib/queries/analytics";
 import { SpendingTrendChart } from "@/components/shared/spending-trend-chart";
@@ -30,13 +31,13 @@ export default async function TenantDashboardPage() {
   const properties = tenantRecords?.map((r: any) => r.properties).filter(Boolean) || [];
   const tenantIds = tenantRecords?.map((r) => r.id) || [];
 
-  // Fetch total owed
+  // Outstanding balance: owed, plus marked-paid amounts still awaiting the owner's confirmation
   const { data: splits } = await supabase
     .from("bill_splits")
-    .select("amount_cents")
+    .select("amount_cents, payment_status")
     .in("tenant_id", tenantIds.length > 0 ? tenantIds : [NO_MATCH_UUID]);
 
-  const totalOwedCents = splits?.reduce((sum, s) => sum + s.amount_cents, 0) || 0;
+  const balance = summarizeSplits(splits ?? []);
 
   // Count cycles
   const propertyIds = properties.map((p: any) => p.id);
@@ -64,8 +65,15 @@ export default async function TenantDashboardPage() {
           icon={<Building2 className="h-4 w-4" />}
         />
         <MetricCard
-          title="Total Owed"
-          value={formatCents(totalOwedCents)}
+          title="Outstanding"
+          value={formatCents(balance.owedCents)}
+          description={
+            balance.markedPaidCents > 0
+              ? `${formatCents(balance.markedPaidCents)} marked paid, awaiting confirmation`
+              : balance.totalCents > 0 && balance.owedCents === 0
+                ? "You're all paid up"
+                : undefined
+          }
           icon={<DollarSign className="h-4 w-4" />}
         />
         <MetricCard
