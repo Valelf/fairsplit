@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, ArrowLeft, ArrowRight } from "lucide-react";
+import { Loader2, ArrowRight, CheckCircle2 } from "lucide-react";
+import { PageHeading } from "@/components/layout/page-heading";
 import Link from "next/link";
 import {
   MonthlyBillsChecklist,
@@ -79,20 +80,23 @@ export function NewCycleForm({ propertyId, accounts = [] }: NewCycleFormProps) {
 
   if (created) {
     return (
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{created.label} created</h1>
-          <p className="text-muted-foreground">
-            Add this month&apos;s bills now, or go to the cycle and add them later.
-          </p>
-        </div>
+      <div className="mx-auto max-w-2xl space-y-6">
+        <PageHeading
+          title={
+            <span className="inline-flex items-center gap-2">
+              <CheckCircle2 className="h-6 w-6 shrink-0 text-success" aria-hidden="true" />
+              {created.label} created
+            </span>
+          }
+          description="Add this month's bills now, or go to the cycle and add them later."
+        />
         <MonthlyBillsChecklist
           propertyId={params.propertyId}
           cycleId={created.id}
           accounts={accounts}
           cycle={created}
         />
-        <Button asChild variant="outline">
+        <Button asChild variant="outline" className="w-full sm:w-auto">
           <Link href={`/dashboard/owner/properties/${params.propertyId}/cycles/${created.id}`}>
             Go to cycle
             <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
@@ -103,27 +107,17 @@ export function NewCycleForm({ propertyId, accounts = [] }: NewCycleFormProps) {
   }
 
   return (
-    <div className="max-w-lg mx-auto space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link
-            href={`/dashboard/owner/properties/${params.propertyId}/overview`}
-            aria-label="Back to property"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">New Billing Cycle</h1>
-          <p className="text-muted-foreground">
-            Create a new billing cycle for this property
-          </p>
-        </div>
-      </div>
+    <div className="mx-auto max-w-lg space-y-6">
+      <PageHeading
+        backHref={`/dashboard/owner/properties/${params.propertyId}/overview`}
+        backLabel="Back to property"
+        title="New Billing Cycle"
+        description="Create a new billing cycle for this property"
+      />
 
       <Card>
         <CardHeader>
-          <CardTitle>Cycle Details</CardTitle>
+          <CardTitle className="font-display text-lg">Cycle Details</CardTitle>
           <CardDescription>
             A billing cycle groups the bills you settle together, usually one month.
           </CardDescription>
@@ -175,22 +169,22 @@ export function NewCycleForm({ propertyId, accounts = [] }: NewCycleFormProps) {
             </div>
 
             {error && (
-              <p role="alert" className="text-sm text-destructive">
+              <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
                 {error}
               </p>
             )}
 
-            <div className="flex gap-3 pt-2">
-              <Button type="submit" disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Create Cycle
-              </Button>
+            <div className="flex flex-col-reverse gap-3 border-t pt-4 sm:flex-row sm:justify-end">
               <Button variant="outline" type="button" asChild>
                 <Link
                   href={`/dashboard/owner/properties/${params.propertyId}/overview`}
                 >
                   Cancel
                 </Link>
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Create Cycle
               </Button>
             </div>
           </form>

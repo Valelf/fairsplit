@@ -14,7 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { PageHeading } from "@/components/layout/page-heading";
 import Link from "next/link";
 
 export default function NewPropertyPage() {
@@ -50,24 +51,17 @@ export default function NewPropertyPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href="/dashboard/owner/properties">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Add Property</h1>
-          <p className="text-muted-foreground">
-            Create a new property to manage bills and tenants
-          </p>
-        </div>
-      </div>
+    <div className="mx-auto max-w-2xl space-y-6">
+      <PageHeading
+        backHref="/dashboard/owner/properties"
+        backLabel="Properties"
+        title="Add Property"
+        description="Create a new property to manage bills and tenants"
+      />
 
       <Card>
         <CardHeader>
-          <CardTitle>Property Details</CardTitle>
+          <CardTitle className="font-display text-lg">Property Details</CardTitle>
           <CardDescription>
             Enter the property address and settings
           </CardDescription>
@@ -103,7 +97,7 @@ export default function NewPropertyPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="city">City</Label>
                 <Input id="city" name="city" placeholder="City" required />
@@ -114,7 +108,7 @@ export default function NewPropertyPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="zip_code">ZIP Code</Label>
                 <Input
@@ -157,15 +151,19 @@ export default function NewPropertyPage() {
               </Select>
             </div>
 
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {error && (
+              <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                {error}
+              </p>
+            )}
 
-            <div className="flex gap-3 pt-2">
+            <div className="flex flex-col-reverse gap-3 border-t pt-4 sm:flex-row sm:justify-end">
+              <Button variant="outline" type="button" asChild>
+                <Link href="/dashboard/owner/properties">Cancel</Link>
+              </Button>
               <Button type="submit" disabled={loading}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Create Property
-              </Button>
-              <Button variant="outline" type="button" asChild>
-                <Link href="/dashboard/owner/properties">Cancel</Link>
               </Button>
             </div>
           </form>
