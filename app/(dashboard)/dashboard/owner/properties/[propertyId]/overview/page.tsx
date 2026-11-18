@@ -14,8 +14,10 @@ import {
   Plus,
   MapPin,
 } from "lucide-react";
-import { formatCents } from "@/lib/utils";
+import { formatCents, formatDate, formatDateRange } from "@/lib/utils";
 import Link from "next/link";
+import { PropertySettings } from "@/components/owner/property-settings";
+import { TenantRowActions } from "@/components/owner/tenant-row-actions";
 
 interface PageProps {
   params: { propertyId: string };
@@ -56,6 +58,7 @@ export default async function PropertyOverviewPage({ params }: PageProps) {
     .from("billing_cycles")
     .select("*")
     .eq("property_id", property.id)
+    .order("start_date", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false });
 
   // Fetch bills and total
@@ -68,22 +71,24 @@ export default async function PropertyOverviewPage({ params }: PageProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
           <Link href="/dashboard/owner/properties">
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-bold tracking-tight">
             {property.name}
           </h1>
           <p className="text-muted-foreground flex items-center gap-1">
             <MapPin className="h-3 w-3" />
-            {property.address_line1}, {property.city}, {property.state}{" "}
-            {property.zip_code}
+            {property.address_line1}
+            {property.address_line2 ? `, ${property.address_line2}` : ""},{" "}
+            {property.city}, {property.state} {property.zip_code}
           </p>
         </div>
+        <PropertySettings property={property} />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -134,20 +139,22 @@ export default async function PropertyOverviewPage({ params }: PageProps) {
               {allTenants.map((tenant) => (
                 <div
                   key={tenant.id}
-                  className="flex items-center justify-between rounded-lg border p-3"
+                  className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <div className="flex items-center gap-3">
-                    <div>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="min-w-0">
                       <p className="font-medium">{tenant.display_name}</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="truncate text-sm text-muted-foreground">
                         {tenant.email}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
                     <span className="text-sm text-muted-foreground">
-                      {tenant.join_date}
-                      {tenant.leave_date && ` – ${tenant.leave_date}`}
+                      {formatDate(tenant.join_date)}
+                      {tenant.leave_date
+                        ? ` – ${formatDate(tenant.leave_date)}`
+                        : " – present"}
                     </span>
                     <Badge
                       variant={
@@ -160,6 +167,7 @@ export default async function PropertyOverviewPage({ params }: PageProps) {
                     >
                       {tenant.status}
                     </Badge>
+                    <TenantRowActions tenant={tenant} />
                   </div>
                 </div>
               ))}
@@ -200,8 +208,9 @@ export default async function PropertyOverviewPage({ params }: PageProps) {
                   <div>
                     <p className="font-medium">{cycle.label}</p>
                     <p className="text-sm text-muted-foreground">
-                      Created{" "}
-                      {new Date(cycle.created_at).toLocaleDateString()}
+                      {cycle.start_date && cycle.end_date
+                        ? formatDateRange(cycle.start_date, cycle.end_date)
+                        : `Created ${formatDate(cycle.created_at)}`}
                     </p>
                   </div>
                   <Badge

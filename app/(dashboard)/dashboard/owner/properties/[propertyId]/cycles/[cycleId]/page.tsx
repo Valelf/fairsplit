@@ -10,6 +10,8 @@ import { BillSplitTable } from "@/components/shared/bill-split-table";
 import { PdfViewerLink } from "@/components/shared/pdf-viewer-link";
 import { DownloadInvoiceButton } from "@/components/shared/download-invoice-button";
 import { CyclePaymentsPanel } from "@/components/owner/cycle-payments-panel";
+import { CycleStatusActions } from "@/components/owner/cycle-status-actions";
+import { BillActions } from "@/components/owner/bill-actions";
 
 interface PageProps {
   params: { propertyId: string; cycleId: string };
@@ -60,7 +62,7 @@ export default async function CycleDetailPage({ params }: PageProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
           <Link
             href={`/dashboard/owner/properties/${params.propertyId}/overview`}
@@ -86,10 +88,20 @@ export default async function CycleDetailPage({ params }: PageProps) {
             </Badge>
           </div>
           <p className="text-muted-foreground">
+            {cycle.start_date && cycle.end_date && (
+              <>
+                {formatDateRange(cycle.start_date, cycle.end_date)} &middot;{" "}
+              </>
+            )}
             {bills?.length || 0} bills &middot;{" "}
             {formatCents(totalBilledCents)} total
           </p>
         </div>
+        <CycleStatusActions
+          cycleId={cycle.id}
+          label={cycle.label}
+          status={cycle.status}
+        />
         {cycle.status !== "closed" && (
           <Button asChild>
             <Link
@@ -112,7 +124,11 @@ export default async function CycleDetailPage({ params }: PageProps) {
                   <CardTitle className="text-sm font-medium capitalize">
                     {bill.category}
                   </CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  {cycle.status !== "closed" ? (
+                    <BillActions bill={bill} />
+                  ) : (
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  )}
                 </div>
               </CardHeader>
               <CardContent>

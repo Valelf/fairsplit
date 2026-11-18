@@ -230,19 +230,8 @@ export async function resolveFlag(input: z.infer<typeof resolveFlagSchema>) {
     return { error: billError.message };
   }
 
-  // Delete old splits and recalculate
-  await supabase
-    .from("bill_splits")
-    .delete()
-    .eq("bill_id", flag.bill_id);
-
-  const splitError = await calculateAndStoreSplits(
-    flag.bill_id,
-    bill.property_id,
-    parsed.data.resolvedAmountCents,
-    bill.service_start,
-    bill.service_end
-  );
+  // Re-split atomically (upsert keeps payment columns on existing split rows)
+  const splitError = await calculateAndStoreSplits(flag.bill_id);
 
   if (splitError) {
     return { error: splitError };

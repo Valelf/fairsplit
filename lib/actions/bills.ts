@@ -1,10 +1,10 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
 import { createNotification } from "@/lib/server/notifications";
-import { calculateAndStoreSplits } from "@/lib/server/splits";
+import { calculateAndStoreSplits, recalculateBillSplits } from "@/lib/server/splits";
+import { revalidatePropertyPages } from "@/lib/server/revalidate";
 
 const createBillSchema = z.object({
   cycle_id: z.string().uuid(),
@@ -73,13 +73,7 @@ export async function createBill(input: CreateBillInput) {
   }
 
   // Calculate and store splits
-  const splitError = await calculateAndStoreSplits(
-    bill.id,
-    parsed.data.property_id,
-    parsed.data.amount_cents,
-    parsed.data.service_start,
-    parsed.data.service_end
-  );
+  const splitError = await calculateAndStoreSplits(bill.id);
 
   if (splitError) {
     return { error: splitError };
@@ -118,7 +112,7 @@ export async function createBill(input: CreateBillInput) {
     }
   }
 
-  revalidatePath(`/dashboard/owner/properties/${parsed.data.property_id}`);
+  revalidatePropertyPages(parsed.data.property_id);
 
   return { data: bill };
 }
@@ -134,32 +128,95 @@ export async function deleteBill(billId: string) {
     return { error: "Not authenticated" };
   }
 
-  // Get property_id and pdf path before delete
-  const { data: bill } = await supabase
-    .from("bills")
-    .select("property_id, pdf_storage_path")
-    .eq("id", billId)
-    .single();
+  const loaded = await loadOwnedBill(billId);
+  if (!loaded.ok) return { error: loaded.error };
+  const { bill } = loaded;
+  if (loaded.cycleClosed) return { ok: false as const, error: "Reopen the cycle before deleting its bills" };
 
-  if (!bill) {
-    return { error: "Bill not found" };
-  }
-
-  // Delete PDF from storage if exists
-  if (bill.pdf_storage_path) {
-    await supabase.storage
-      .from("bill-pdfs")
-      .remove([bill.pdf_storage_path]);
-  }
-
-  // bill_splits cascade deleted
-  const { error } = await supabase.from("bills").delete().eq("id", billId);
+  // bill_splits and bill_flags cascade on delete
+  const { error } = await supabase.from("bills").delete().eq("id", bill.id);
 
   if (error) {
     return { error: error.message };
   }
 
-  revalidatePath(`/dashboard/owner/properties/${bill.property_id}`);
+  // Remove the PDF only once the bill row is gone
+  if (bill.pdf_storage_path) {
+    await supabase.storage.from("bill-pdfs").remove([bill.pdf_storage_path]);
+  }
 
+  revalidatePropertyPages(bill.property_id);
+
+  return { success: true };
+}
+
+/** Load a bill, confirm the signed-in user owns its property, and report whether its cycle is closed. */
+async function loadOwnedBill(billId: string) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false as const, error: "Not authenticated" };
+
+  const id = z.string().uuid().safeParse(billId);
+  if (!id.success) return { ok: false as const, error: "Invalid bill" };
+
+  const { data: bill } = await supabase.from("bills").select("*").eq("id", id.data).single();
+  if (!bill) return { ok: false as const, error: "Bill not found" };
+
+  const [{ data: property }, { data: cycle }] = await Promise.all([
+    supabase
+      .from("properties")
+      .select("id")
+      .eq("id", bill.property_id)
+      .eq("owner_id", user.id)
+      .is("deleted_at", null)
+      .single(),
+    supabase.from("billing_cycles").select("status").eq("id", bill.cycle_id).single(),
+  ]);
+  if (!property) return { ok: false as const, error: "Property not found or access denied" };
+
+  return { ok: true as const, supabase, bill, cycleClosed: cycle?.status === "closed" };
+}
+
+const updateBillSchema = z
+  .object({
+    category: z.enum(["internet", "electricity", "water", "other"]),
+    provider: z.string().trim().min(1, "Provider name is required").max(120),
+    amount_cents: z.number().int().positive("Amount must be positive").max(100_000_000),
+    service_start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use a valid start date"),
+    service_end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use a valid end date"),
+    notes: z.string().max(1000).optional().nullable(),
+  })
+  .refine((v) => v.service_start <= v.service_end, {
+    message: "Service end can't be before service start",
+  });
+
+export type UpdateBillInput = z.infer<typeof updateBillSchema>;
+
+/** Edit a bill's amount, dates, provider or category, then re-split it atomically. */
+export async function updateBill(billId: string, input: UpdateBillInput) {
+  const loaded = await loadOwnedBill(billId);
+  if (!loaded.ok) return { error: loaded.error };
+  const { supabase, bill } = loaded;
+  if (loaded.cycleClosed) return { ok: false as const, error: "Reopen the cycle before editing its bills" };
+
+  const parsed = updateBillSchema.safeParse(input);
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  const { error } = await supabase
+    .from("bills")
+    .update({
+      ...parsed.data,
+      notes: parsed.data.notes || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", bill.id);
+  if (error) return { error: error.message };
+
+  const splitError = await recalculateBillSplits(bill.id);
+  if (splitError) return { error: `Bill saved, but re-splitting failed: ${splitError}` };
+
+  revalidatePropertyPages(bill.property_id);
   return { success: true };
 }
