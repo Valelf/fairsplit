@@ -20,6 +20,25 @@ export type OwnerPaymentMethods = {
   updated_at: string;
 };
 
+export type CycleNotificationKind = "cycle_ready" | "due_soon" | "overdue" | "owner_digest";
+export type CycleNotificationStatus = "pending" | "sent" | "skipped" | "failed";
+
+export type CycleNotification = {
+  id: string;
+  kind: CycleNotificationKind;
+  cycle_id: string | null;
+  property_id: string | null;
+  property_tenant_id: string | null;
+  recipient_id: string | null;
+  recipient_email: string;
+  digest_date: string | null;
+  status: CycleNotificationStatus;
+  provider_id: string | null;
+  error: string | null;
+  sent_at: string;
+  created_at: string;
+};
+
 export type Profile = {
   id: string;
   email: string;
@@ -27,6 +46,7 @@ export type Profile = {
   role: UserRole;
   avatar_url: string | null;
   onboarding_completed: boolean;
+  email_reminders?: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -67,6 +87,7 @@ export type PropertyTenant = {
 
 export type BillingCycle = {
   due_date?: string | null;
+  published_at?: string | null;
   start_date?: string | null;
   end_date?: string | null;
   id: string;
@@ -386,6 +407,13 @@ export interface Database {
         Row: AppHeartbeat;
         Insert: Partial<AppHeartbeat>;
         Update: Partial<AppHeartbeat>;
+        Relationships: [];
+      };
+      cycle_notifications: {
+        Row: CycleNotification;
+        Insert: Partial<Omit<CycleNotification, "kind" | "recipient_email">> &
+          Pick<CycleNotification, "kind" | "recipient_email">;
+        Update: Partial<Omit<CycleNotification, "id" | "created_at">>;
         Relationships: [];
       };
       owner_payment_methods: {

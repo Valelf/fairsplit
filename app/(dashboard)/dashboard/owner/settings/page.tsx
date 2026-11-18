@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PaymentMethodsForm } from "@/components/owner/payment-methods-form";
+import { OwnerEmailPrefsCard } from "@/components/owner/owner-email-prefs-card";
 
 export default async function OwnerSettingsPage() {
   const supabase = createClient();
@@ -22,6 +23,7 @@ export default async function OwnerSettingsPage() {
         <p className="text-muted-foreground">How your tenants pay you</p>
       </div>
       <PaymentMethodsForm initial={methods} />
+      <OwnerEmailPrefsCard />
     </div>
   );
 }

@@ -12,6 +12,7 @@ import { DownloadInvoiceButton } from "@/components/shared/download-invoice-butt
 import { CyclePaymentsPanel } from "@/components/owner/cycle-payments-panel";
 import { CycleStatusActions } from "@/components/owner/cycle-status-actions";
 import { BillActions } from "@/components/owner/bill-actions";
+import { CycleNotifyPanel } from "@/components/owner/cycle-notify-panel";
 
 interface PageProps {
   params: { propertyId: string; cycleId: string };
@@ -148,6 +149,7 @@ export default async function CycleDetailPage({ params }: PageProps) {
         </div>
       )}
 
+      <CycleNotifyPanel propertyId={params.propertyId} cycleId={cycle.id} />
       <CyclePaymentsPanel propertyId={params.propertyId} cycleId={cycle.id} />
 
       {/* Invoice Downloads */}
