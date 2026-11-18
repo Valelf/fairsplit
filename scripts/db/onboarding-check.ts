@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Live check of the become_owner() RPC: a fresh user can become an owner (once, idempotently),
  * an invited tenant cannot. Creates a throwaway user and deletes it and its rows afterwards.
  * Usage: npx tsx scripts/db/onboarding-check.ts
