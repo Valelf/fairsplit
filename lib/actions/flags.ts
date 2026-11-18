@@ -204,6 +204,22 @@ export async function resolveFlag(input: z.infer<typeof resolveFlagSchema>) {
 
   const bill = (flag as any).bills;
 
+  // Only the property's owner may resolve (tenants can read their own flags), and a closed
+  // cycle's bills are final: check both before changing anything.
+  const [{ data: ownedProperty }, { data: billCycle }] = await Promise.all([
+    supabase
+      .from("properties")
+      .select("id")
+      .eq("id", flag.property_id)
+      .eq("owner_id", user.id)
+      .is("deleted_at", null)
+      .maybeSingle(),
+    supabase.from("bills").select("billing_cycles(status)").eq("id", flag.bill_id).maybeSingle(),
+  ]);
+  if (!ownedProperty) return { error: "Flag not found" };
+  const cycleStatus = (billCycle?.billing_cycles as unknown as { status: string } | null)?.status;
+  if (cycleStatus === "closed") return { error: "Reopen the cycle before changing its bills" };
+
   // Update the flag
   const { error: flagError } = await supabase
     .from("bill_flags")
