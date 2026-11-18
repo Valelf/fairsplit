@@ -46,29 +46,30 @@ export function BillSplitTable({
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Bill Split Breakdown</CardTitle>
+    <Card className="overflow-hidden">
+      <CardHeader className="pb-3">
+        <CardTitle>Bill split breakdown</CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Each share is the tenant&apos;s person-days divided by the bill&apos;s total person-days.
+        </p>
       </CardHeader>
-      <CardContent className="overflow-x-auto">
+      <CardContent className="px-0 pb-0 sm:px-0 sm:pb-0">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="sticky left-0 bg-card z-10 min-w-[120px]">
+            <TableRow className="bg-muted hover:bg-muted">
+              <TableHead className="sticky left-0 z-10 min-w-32 bg-muted align-bottom">
                 Tenant
               </TableHead>
               {bills.map((bill) => (
-                <TableHead key={bill.id} className="text-center min-w-[140px]">
-                  <div className="capitalize font-medium">{bill.category}</div>
-                  <div className="text-xs font-normal text-muted-foreground">
-                    {bill.provider}
-                  </div>
-                  <div className="text-xs font-normal text-muted-foreground">
+                <TableHead key={bill.id} className="min-w-36 py-3 text-right align-bottom">
+                  <div className="font-semibold capitalize text-foreground">{bill.category}</div>
+                  <div className="font-normal">{bill.provider}</div>
+                  <div className="figure font-normal text-foreground">
                     {formatCents(bill.amount_cents)}
                   </div>
                 </TableHead>
               ))}
-              <TableHead className="text-center min-w-[100px] font-bold">
+              <TableHead className="min-w-28 text-right align-bottom font-semibold text-foreground">
                 Total
               </TableHead>
             </TableRow>
@@ -80,7 +81,7 @@ export function BillSplitTable({
 
               return (
                 <TableRow key={tenantId}>
-                  <TableCell className="sticky left-0 bg-card z-10 font-medium">
+                  <TableCell className="sticky left-0 z-10 bg-card font-medium">
                     {tenant?.display_name || "Unknown"}
                   </TableCell>
                   {bills.map((bill) => {
@@ -89,17 +90,19 @@ export function BillSplitTable({
                     rowTotal += amount;
 
                     return (
-                      <TableCell key={bill.id} className="text-center">
-                        <div>{formatCents(amount)}</div>
+                      <TableCell key={bill.id} className="text-right">
+                        <div className={amount === 0 ? "figure text-muted-foreground" : "figure"}>
+                          {formatCents(amount)}
+                        </div>
                         {split && split.person_days > 0 && (
-                          <div className="text-xs text-muted-foreground">
-                            {split.person_days}d / {split.total_person_days}d
+                          <div className="figure text-xs text-muted-foreground">
+                            {split.person_days} / {split.total_person_days} days
                           </div>
                         )}
                       </TableCell>
                     );
                   })}
-                  <TableCell className="text-center font-bold">
+                  <TableCell className="figure text-right font-medium">
                     {formatCents(rowTotal)}
                   </TableCell>
                 </TableRow>
@@ -107,16 +110,16 @@ export function BillSplitTable({
             })}
 
             {/* Totals row */}
-            <TableRow className="border-t-2 font-bold">
-              <TableCell className="sticky left-0 bg-card z-10">
+            <TableRow className="border-t-2 border-foreground/15 bg-accent font-semibold hover:bg-accent">
+              <TableCell className="sticky left-0 z-10 bg-accent">
                 Total
               </TableCell>
               {bills.map((bill) => (
-                <TableCell key={bill.id} className="text-center">
+                <TableCell key={bill.id} className="figure text-right">
                   {formatCents(bill.amount_cents)}
                 </TableCell>
               ))}
-              <TableCell className="text-center">
+              <TableCell className="figure text-right">
                 {formatCents(
                   bills.reduce((sum, b) => sum + b.amount_cents, 0)
                 )}

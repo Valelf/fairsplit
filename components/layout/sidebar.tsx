@@ -2,62 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
+import { ChevronsLeft, ChevronsRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/lib/supabase/types";
-import {
-  LayoutDashboard,
-  Building2,
-  Users,
-  Receipt,
-  Settings,
-  Shield,
-  Flag,
-  ChevronLeft,
-  ChevronRight,
-  ClipboardList,
-  Wallet,
-} from "lucide-react";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-
-interface NavItem {
-  label: string;
-  href: string;
-  icon: React.ElementType;
-}
-
-const adminNav: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard/admin/dashboard", icon: LayoutDashboard },
-  { label: "Users", href: "/dashboard/admin/users", icon: Users },
-  { label: "Properties", href: "/dashboard/admin/properties", icon: Building2 },
-  { label: "Audit Log", href: "/dashboard/admin/audit-log", icon: ClipboardList },
-];
-
-const ownerNav: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard/owner/dashboard", icon: LayoutDashboard },
-  { label: "Properties", href: "/dashboard/owner/properties", icon: Building2 },
-  { label: "Payments", href: "/dashboard/owner/payments", icon: Wallet },
-  { label: "Settings", href: "/dashboard/owner/settings", icon: Settings },
-];
-
-const tenantNav: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard/tenant/dashboard", icon: LayoutDashboard },
-  { label: "My Properties", href: "/dashboard/tenant/properties", icon: Building2 },
-  { label: "Settings", href: "/dashboard/tenant/settings", icon: Settings },
-];
-
-function getNavItems(role: UserRole): NavItem[] {
-  switch (role) {
-    case "admin":
-      return adminNav;
-    case "owner":
-      return ownerNav;
-    case "tenant":
-      return tenantNav;
-    default:
-      return tenantNav;
-  }
-}
+import { BrandGlyph, BrandLockup } from "./brand-mark";
+import { getNavItems, isNavItemActive, roleLabel } from "./nav-items";
 
 interface SidebarProps {
   role: UserRole;
@@ -67,71 +17,91 @@ export function Sidebar({ role }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const navItems = getNavItems(role);
+  const home = `/dashboard/${role}/dashboard`;
 
   return (
     <aside
       className={cn(
-        "hidden md:flex flex-col border-r bg-card transition-all duration-200",
-        collapsed ? "w-16" : "w-64"
+        "hidden shrink-0 flex-col bg-rail text-rail-foreground transition-[width] duration-200 md:flex",
+        collapsed ? "w-16" : "w-60"
       )}
     >
-      <div className={cn("flex items-center border-b h-14 px-4", collapsed && "justify-center")}>
-        {!collapsed && (
-          <Link href={`/dashboard/${role}/dashboard`} className="font-bold text-lg">
-            FairSplit
-          </Link>
+      <div
+        className={cn(
+          "flex h-16 items-center border-b border-rail-border px-4",
+          collapsed && "justify-center px-0"
         )}
-        <Button
-          variant="ghost"
-          size="icon"
-          className={cn("h-8 w-8", !collapsed && "ml-auto")}
-          onClick={() => setCollapsed(!collapsed)}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+      >
+        <Link
+          href={home}
+          aria-label="FairSplit home"
+          className="rounded-md focus-visible:ring-offset-rail"
         >
-          {collapsed ? (
-            <ChevronRight className="h-4 w-4" />
-          ) : (
-            <ChevronLeft className="h-4 w-4" />
-          )}
-        </Button>
+          {collapsed ? <BrandGlyph /> : <BrandLockup tone="rail" />}
+        </Link>
       </div>
 
-      <nav className="flex-1 p-2 space-y-1">
+      <nav aria-label="Main" className="flex-1 space-y-1 p-3">
         {navItems.map((item) => {
-          const isActive =
-            pathname === item.href || pathname.startsWith(item.href + "/");
-
+          const isActive = isNavItemActive(pathname, item.href);
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                "hover:bg-accent hover:text-accent-foreground",
-                isActive
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground",
-                collapsed && "justify-center px-2"
-              )}
+              aria-current={isActive ? "page" : undefined}
               title={collapsed ? item.label : undefined}
+              className={cn(
+                "group relative flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors focus-visible:ring-offset-rail",
+                isActive
+                  ? "bg-rail-active text-rail-active-foreground"
+                  : "text-rail-foreground hover:bg-rail-active/60 hover:text-rail-active-foreground",
+                collapsed && "justify-center px-0"
+              )}
             >
-              <item.icon className="h-4 w-4 shrink-0" />
-              {!collapsed && <span>{item.label}</span>}
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "absolute inset-y-2 left-0 w-0.5 rounded-full bg-rail-accent transition-opacity",
+                  isActive ? "opacity-100" : "opacity-0"
+                )}
+              />
+              <item.icon
+                aria-hidden="true"
+                className={cn(
+                  "h-4 w-4 shrink-0",
+                  isActive ? "text-rail-accent" : "text-rail-muted group-hover:text-rail-foreground"
+                )}
+              />
+              {collapsed ? <span className="sr-only">{item.label}</span> : <span>{item.label}</span>}
             </Link>
           );
         })}
       </nav>
 
-      <div className="border-t p-2">
-        <div
-          className={cn(
-            "flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground",
-            collapsed && "justify-center"
-          )}
+      <div
+        className={cn(
+          "flex items-center gap-2 border-t border-rail-border p-3",
+          collapsed && "justify-center"
+        )}
+      >
+        {!collapsed && (
+          <span className="flex-1 truncate px-2 text-xs text-rail-muted">
+            {roleLabel[role]} workspace
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={() => setCollapsed(!collapsed)}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-expanded={!collapsed}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-rail-muted transition-colors hover:bg-rail-active hover:text-rail-active-foreground focus-visible:ring-offset-rail"
         >
-          <Shield className="h-3 w-3" />
-          {!collapsed && <span className="capitalize">{role}</span>}
-        </div>
+          {collapsed ? (
+            <ChevronsRight className="h-4 w-4" aria-hidden="true" />
+          ) : (
+            <ChevronsLeft className="h-4 w-4" aria-hidden="true" />
+          )}
+        </button>
       </div>
     </aside>
   );
