@@ -1,5 +1,11 @@
 {
   "root": true,
-  "extends": ["next/core-web-vitals"],
-  "ignorePatterns": ["app/_legacy/**", "scripts/**"]
+  "extends": [
+    "next/core-web-vitals"
+  ],
+  "ignorePatterns": [
+    "app/_legacy/**",
+    "scripts/**",
+    ".claude/**"
+  ]
 }

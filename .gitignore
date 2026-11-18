@@ -40,3 +40,6 @@ next-env.d.ts
 scripts/pilot/*.local.json
 
 .env*
+
+# agent worktrees
+.claude/worktrees/
