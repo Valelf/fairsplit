@@ -55,10 +55,10 @@ export function PaymentMethodsForm({ initial }: PaymentMethodsFormProps) {
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className="grid items-start gap-6 lg:grid-cols-2">
       <Card>
         <CardHeader>
-          <CardTitle>Payment details</CardTitle>
+          <CardTitle className="font-display text-lg">Payment details</CardTitle>
           <CardDescription>
             Tenants see these on each bill with a one-tap link that fills in the amount. FairSplit never
             touches the money.
@@ -108,7 +108,7 @@ export function PaymentMethodsForm({ initial }: PaymentMethodsFormProps) {
                 maxLength={500}
                 rows={3}
                 placeholder="e.g. Please pay by the 5th. Cash is fine too."
-                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background sm:text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               />
             </div>
             {error && (
@@ -116,7 +116,7 @@ export function PaymentMethodsForm({ initial }: PaymentMethodsFormProps) {
                 {error}
               </p>
             )}
-            <Button type="submit" disabled={pending}>
+            <Button type="submit" disabled={pending} className="w-full sm:w-auto">
               {pending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
               ) : saved ? (
@@ -128,11 +128,11 @@ export function PaymentMethodsForm({ initial }: PaymentMethodsFormProps) {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="lg:sticky lg:top-20">
         <CardHeader>
-          <CardTitle>What tenants see</CardTitle>
+          <CardTitle className="font-display text-lg">What tenants see</CardTitle>
           <CardDescription>
-            Preview for a {formatCents(PREVIEW_AMOUNT_CENTS)} share
+            Preview for a <span className="figure">{formatCents(PREVIEW_AMOUNT_CENTS)}</span> share
             {values.payee_name ? `, paid to ${values.payee_name}` : ""}.
           </CardDescription>
         </CardHeader>

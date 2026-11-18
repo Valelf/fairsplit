@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { AlertCircle, CheckCircle2, Clock, Wallet } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MetricCard } from "@/components/shared/metric-card";
+import { PageHeading } from "@/components/layout/page-heading";
+import { EmptyPanel } from "@/components/shared/empty-panel";
 import { PaymentLedgerTable } from "@/components/owner/payment-ledger-table";
 import { createClient } from "@/lib/supabase/server";
 import { getOwnerPaymentLedger } from "@/lib/queries/payments";
@@ -33,8 +35,10 @@ function FilterChip({ href, active, children }: { href: string; active: boolean;
       href={href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "rounded-full border px-3 py-1 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        active ? "border-primary bg-primary text-primary-foreground" : "hover:bg-accent"
+        "inline-flex min-h-9 items-center rounded-full border px-3.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        active
+          ? "border-foreground bg-foreground text-background"
+          : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-accent-foreground"
       )}
     >
       {children}
@@ -78,19 +82,18 @@ export default async function OwnerPaymentsPage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Payments</h1>
-        <p className="text-muted-foreground">
-          Who has paid, across your properties. Tenants pay you directly; confirm when the money arrives.
-        </p>
-      </div>
+      <PageHeading
+        title="Payments"
+        description="Who has paid, across your properties. Tenants pay you directly; confirm when the money arrives."
+      />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard title="Collected" value={formatCents(collected)} description="Confirmed by you" icon={<CheckCircle2 className="h-4 w-4" />} />
-        <MetricCard title="Awaiting confirmation" value={formatCents(awaiting)} description="Tenants marked these paid" icon={<Clock className="h-4 w-4" />} />
-        <MetricCard title="Outstanding" value={formatCents(owed)} description="Not yet paid" icon={<Wallet className="h-4 w-4" />} />
+      <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
+        <MetricCard title="Collected" value={formatCents(collected)} description="Confirmed by you" tone="positive" icon={<CheckCircle2 className="h-4 w-4" />} />
+        <MetricCard title="Awaiting" value={formatCents(awaiting)} description="Marked paid by tenants" tone="info" icon={<Clock className="h-4 w-4" />} />
+        <MetricCard title="Outstanding" value={formatCents(owed)} description="Not yet paid" tone={owed > 0 ? "attention" : "default"} icon={<Wallet className="h-4 w-4" />} />
         <MetricCard
           title="Overdue"
+          tone={overdueCents > 0 ? "negative" : "default"}
           value={formatCents(overdueCents)}
           description={`${overdueRows.length} ${overdueRows.length === 1 ? "share" : "shares"} past due`}
           icon={<AlertCircle className="h-4 w-4" />}
@@ -99,12 +102,12 @@ export default async function OwnerPaymentsPage({ searchParams }: PageProps) {
 
       <Card>
         <CardHeader className="space-y-4">
-          <div>
-            <CardTitle>Ledger</CardTitle>
+          <div className="space-y-1">
+            <CardTitle className="font-display text-lg">Ledger</CardTitle>
             <CardDescription>One row per tenant per billing cycle.</CardDescription>
           </div>
           {properties.length > 1 && (
-            <nav aria-label="Filter by property" className="flex flex-wrap gap-2">
+            <nav aria-label="Filter by property" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:flex-wrap sm:overflow-visible">
               <FilterChip href={href(undefined, statusFilter)} active={!propertyFilter}>
                 All properties
               </FilterChip>
@@ -115,7 +118,7 @@ export default async function OwnerPaymentsPage({ searchParams }: PageProps) {
               ))}
             </nav>
           )}
-          <nav aria-label="Filter by status" className="flex flex-wrap gap-2">
+          <nav aria-label="Filter by status" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:flex-wrap sm:overflow-visible">
             {STATUS_FILTERS.map((f) => (
               <FilterChip key={f} href={href(propertyFilter, f)} active={statusFilter === f}>
                 {filterLabel(f)}
@@ -127,14 +130,25 @@ export default async function OwnerPaymentsPage({ searchParams }: PageProps) {
           {visible.length > 0 ? (
             <PaymentLedgerTable rows={visible} showProperty={!propertyFilter && properties.length > 1} />
           ) : (
-            <div className="py-8 text-center">
-              <Wallet className="mx-auto h-8 w-8 text-muted-foreground" aria-hidden="true" />
-              <p className="mt-2 text-sm text-muted-foreground">
-                {rows.length === 0
-                  ? "No tenant shares yet. Once a cycle has bills, each tenant's share shows up here."
-                  : "Nothing matches this filter."}
-              </p>
-            </div>
+            <EmptyPanel
+              icon={Wallet}
+              title={rows.length === 0 ? "No tenant shares yet" : "Nothing matches this filter"}
+              description={
+                rows.length === 0
+                  ? "Once a cycle has bills, each tenant's share shows up here."
+                  : "Try another status or property."
+              }
+              action={
+                rows.length > 0 ? (
+                  <Link
+                    href={href(undefined, "all")}
+                    className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+                  >
+                    Clear filters
+                  </Link>
+                ) : undefined
+              }
+            />
           )}
         </CardContent>
       </Card>

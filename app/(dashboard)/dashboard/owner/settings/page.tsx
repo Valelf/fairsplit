@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { PageHeading } from "@/components/layout/page-heading";
 import { PaymentMethodsForm } from "@/components/owner/payment-methods-form";
 
 export default async function OwnerSettingsPage() {
@@ -17,10 +18,7 @@ export default async function OwnerSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground">How your tenants pay you</p>
-      </div>
+      <PageHeading title="Settings" description="How your tenants pay you." />
       <PaymentMethodsForm initial={methods} />
     </div>
   );
