@@ -1,9 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, DollarSign } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus, Receipt, FileDown } from "lucide-react";
+import { PageHeading } from "@/components/layout/page-heading";
+import { CycleStatePill } from "@/components/shared/cycle-state-pill";
+import { EmptyPanel } from "@/components/shared/empty-panel";
 import { formatCents, formatDateRange } from "@/lib/utils";
 import Link from "next/link";
 import { BillSplitTable } from "@/components/shared/bill-split-table";
@@ -85,59 +87,48 @@ export default async function CycleDetailPage({ params }: PageProps) {
     added: (bills ?? []).some((b) => b.utility_account_id === a.id),
   }));
 
+  const addBillHref = `/dashboard/owner/properties/${params.propertyId}/bills/new?cycleId=${cycle.id}`;
+  const hasBills = !!bills && bills.length > 0;
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link
-            href={`/dashboard/owner/properties/${params.propertyId}/overview`}
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight">
-              {cycle.label}
-            </h1>
-            <Badge
-              variant={
-                cycle.status === "closed"
-                  ? "secondary"
-                  : cycle.status === "open"
-                    ? "default"
-                    : "outline"
-              }
-            >
-              {cycle.status}
-            </Badge>
-          </div>
-          <p className="text-muted-foreground">
+      <PageHeading
+        backHref={`/dashboard/owner/properties/${params.propertyId}/overview`}
+        backLabel="Property overview"
+        title={cycle.label}
+        badges={<CycleStatePill status={cycle.status} />}
+        description={
+          <>
             {cycle.start_date && cycle.end_date && (
               <>
                 {formatDateRange(cycle.start_date, cycle.end_date)} &middot;{" "}
               </>
             )}
             {bills?.length || 0} bills &middot;{" "}
-            {formatCents(totalBilledCents)} total
-          </p>
-        </div>
-        <CycleStatusActions
-          cycleId={cycle.id}
-          label={cycle.label}
-          status={cycle.status}
-        />
-        {cycle.status !== "closed" && (
-          <Button asChild>
-            <Link
-              href={`/dashboard/owner/properties/${params.propertyId}/bills/new?cycleId=${cycle.id}`}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Add Bill
-            </Link>
-          </Button>
-        )}
-      </div>
+            <span className="font-mono tabular-nums text-foreground">
+              {formatCents(totalBilledCents)}
+            </span>{" "}
+            total
+          </>
+        }
+        actions={
+          <>
+            <CycleStatusActions
+              cycleId={cycle.id}
+              label={cycle.label}
+              status={cycle.status}
+            />
+            {cycle.status !== "closed" && (
+              <Button asChild>
+                <Link href={addBillHref}>
+                  <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+                  Add Bill
+                </Link>
+              </Button>
+            )}
+          </>
+        }
+      />
 
       {checklist.some((a) => !a.added) && (
         <MonthlyBillsChecklist
@@ -148,106 +139,107 @@ export default async function CycleDetailPage({ params }: PageProps) {
         />
       )}
 
-      {/* Bills Summary Cards */}
-      {bills && bills.length > 0 && (
-        <div className="grid gap-4 md:grid-cols-3">
-          {bills.map((bill) => (
-            <Card key={bill.id}>
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-medium capitalize">
-                    {bill.category}
-                  </CardTitle>
-                  {cycle.status !== "closed" ? (
-                    <BillActions
-                      bill={bill}
-                      tenants={splitTenants}
-                      exclusions={(exclusions ?? []).filter((e) => e.bill_id === bill.id)}
-                    />
-                  ) : (
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {formatCents(bill.amount_cents)}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {bill.provider} &middot;{" "}
-                  {formatDateRange(bill.service_start, bill.service_end)}
-                </p>
-                {bill.pdf_storage_path && (
-                  <PdfViewerLink billId={bill.id} />
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      <CycleNotifyPanel propertyId={params.propertyId} cycleId={cycle.id} />
-      <CyclePaymentsPanel propertyId={params.propertyId} cycleId={cycle.id} />
-
-      {/* Invoice Downloads */}
-      {bills && bills.length > 0 && tenants && tenants.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Generate Invoices</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {tenants
-                .filter((t) => t.status !== "departed" || true)
-                .map((tenant) => (
-                  <div
-                    key={tenant.id}
-                    className="flex items-center justify-between rounded-lg border px-3 py-2"
-                  >
-                    <div>
-                      <p className="text-sm font-medium">
-                        {tenant.display_name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {tenant.email}
-                      </p>
+      {/* Bills in this cycle */}
+      {hasBills && (
+        <section aria-labelledby="cycle-bills-heading" className="space-y-3">
+          <h2 id="cycle-bills-heading" className="font-display text-lg font-semibold">
+            Bills
+          </h2>
+          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {bills.map((bill) => (
+              <li key={bill.id}>
+                <Card className="h-full">
+                  <CardContent className="flex h-full flex-col gap-2 p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium capitalize">
+                          {bill.category}
+                        </p>
+                        <p className="truncate text-sm text-muted-foreground">{bill.provider}</p>
+                      </div>
+                      {cycle.status !== "closed" && (
+                        <BillActions
+                          bill={bill}
+                          tenants={splitTenants}
+                          exclusions={(exclusions ?? []).filter((e) => e.bill_id === bill.id)}
+                        />
+                      )}
                     </div>
-                    <DownloadInvoiceButton
-                      cycleId={cycle.id}
-                      tenantId={tenant.id}
-                    />
-                  </div>
-                ))}
-            </div>
-          </CardContent>
-        </Card>
+                    <p className="font-mono text-2xl font-semibold tabular-nums">
+                      {formatCents(bill.amount_cents)}
+                    </p>
+                    <div className="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                      <span>{formatDateRange(bill.service_start, bill.service_end)}</span>
+                      {bill.pdf_storage_path && <PdfViewerLink billId={bill.id} />}
+                    </div>
+                  </CardContent>
+                </Card>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
-      {/* Bill Split Table */}
-      {bills && bills.length > 0 && tenants && splits ? (
+      {/* Split matrix: show the math */}
+      {hasBills && tenants && splits ? (
         <BillSplitTable
           bills={bills}
           tenants={tenants}
           splits={splits as any}
         />
       ) : (
-        <Card>
-          <CardContent className="flex flex-col items-center py-12">
-            <DollarSign className="h-8 w-8 text-muted-foreground" />
-            <p className="mt-2 text-sm text-muted-foreground">
-              No bills in this cycle yet. Add a bill to see the split
-              breakdown.
-            </p>
-            {cycle.status !== "closed" && (
-              <Button asChild variant="outline" className="mt-4">
-                <Link
-                  href={`/dashboard/owner/properties/${params.propertyId}/bills/new?cycleId=${cycle.id}`}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
+        <EmptyPanel
+          icon={Receipt}
+          title="No bills in this cycle yet"
+          description="Add a bill to see the split breakdown."
+          action={
+            cycle.status !== "closed" ? (
+              <Button asChild variant="outline">
+                <Link href={addBillHref}>
+                  <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
                   Add Bill
                 </Link>
               </Button>
-            )}
+            ) : undefined
+          }
+        />
+      )}
+
+      <CyclePaymentsPanel propertyId={params.propertyId} cycleId={cycle.id} />
+      <CycleNotifyPanel propertyId={params.propertyId} cycleId={cycle.id} />
+
+      {/* Invoice Downloads */}
+      {hasBills && tenants && tenants.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 font-display text-lg">
+              <FileDown className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              Generate Invoices
+            </CardTitle>
+            <CardDescription>A PDF invoice per tenant for this cycle.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="divide-y rounded-lg border">
+              {tenants.map((tenant) => (
+                <li
+                  key={tenant.id}
+                  className="flex items-center justify-between gap-3 px-3 py-2.5"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">
+                      {tenant.display_name}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {tenant.email}
+                    </p>
+                  </div>
+                  <DownloadInvoiceButton
+                    cycleId={cycle.id}
+                    tenantId={tenant.id}
+                  />
+                </li>
+              ))}
+            </ul>
           </CardContent>
         </Card>
       )}

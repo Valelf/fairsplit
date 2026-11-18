@@ -42,11 +42,11 @@ export function ProrationPreview({ rows, tenantName }: ProrationPreviewProps) {
                     {formatDateRange(r.serviceStart, r.serviceEnd)}
                   </div>
                 </td>
-                <td className="p-2 text-right tabular-nums">
+                <td className="p-2 text-right font-mono tabular-nums">
                   {r.beforeDays} → {r.afterDays}
                 </td>
-                <td className="p-2 text-right tabular-nums">{formatCents(r.beforeCents)}</td>
-                <td className="p-2 text-right font-medium tabular-nums">{formatCents(r.afterCents)}</td>
+                <td className="p-2 text-right font-mono tabular-nums">{formatCents(r.beforeCents)}</td>
+                <td className="p-2 text-right font-mono font-medium tabular-nums">{formatCents(r.afterCents)}</td>
               </tr>
             ))}
           </tbody>
@@ -55,8 +55,8 @@ export function ProrationPreview({ rows, tenantName }: ProrationPreviewProps) {
               <td className="p-2" colSpan={2}>
                 Total
               </td>
-              <td className="p-2 text-right tabular-nums">{formatCents(beforeTotal)}</td>
-              <td className="p-2 text-right tabular-nums">{formatCents(afterTotal)}</td>
+              <td className="p-2 text-right font-mono tabular-nums">{formatCents(beforeTotal)}</td>
+              <td className="p-2 text-right font-mono tabular-nums">{formatCents(afterTotal)}</td>
             </tr>
           </tfoot>
         </table>

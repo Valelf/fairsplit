@@ -44,8 +44,8 @@ export function MonthlyBillsChecklist({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Plug className="h-4 w-4" aria-hidden="true" />
+        <CardTitle className="flex items-center gap-2 font-display text-lg">
+          <Plug className="h-4 w-4 text-primary" aria-hidden="true" />
           {title}
         </CardTitle>
         <CardDescription>
@@ -59,7 +59,7 @@ export function MonthlyBillsChecklist({
             return (
               <li
                 key={a.id}
-                className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
+                className={`flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between ${a.added ? "bg-muted/40" : ""}`}
               >
                 <div className="min-w-0">
                   <p className="font-medium">
@@ -70,7 +70,7 @@ export function MonthlyBillsChecklist({
                     </span>
                   </p>
                   {!a.added && (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="font-mono text-sm tabular-nums text-muted-foreground">
                       {s.amount_cents ? `~${formatCents(s.amount_cents)}` : "No amount yet"}
                       {s.service_start && s.service_end
                         ? ` · ${formatDateRange(s.service_start, s.service_end)}`
@@ -79,8 +79,8 @@ export function MonthlyBillsChecklist({
                   )}
                 </div>
                 {a.added ? (
-                  <span className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                  <span className="flex items-center gap-1 text-sm font-medium text-muted-foreground">
+                    <CheckCircle2 className="h-4 w-4 text-success" aria-hidden="true" />
                     Added
                   </span>
                 ) : (

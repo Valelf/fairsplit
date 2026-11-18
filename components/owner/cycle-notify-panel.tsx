@@ -59,8 +59,8 @@ export async function CycleNotifyPanel({ propertyId, cycleId }: CycleNotifyPanel
       <CardHeader>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-1.5">
-            <CardTitle className="flex items-center gap-2">
-              <Mail className="h-5 w-5" aria-hidden="true" />
+            <CardTitle className="flex items-center gap-2 font-display text-lg">
+              <Mail className="h-5 w-5 text-primary" aria-hidden="true" />
               Tenant emails
             </CardTitle>
             <CardDescription>{description}</CardDescription>

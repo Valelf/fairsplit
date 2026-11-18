@@ -66,7 +66,7 @@ export function PdfUploadZone({
         setUploading(false);
       }
     },
-    [propertyId, onUploadComplete]
+    [propertyId, onUploadComplete, onFileSelected]
   );
 
   function handleDrop(e: React.DragEvent) {
@@ -92,25 +92,28 @@ export function PdfUploadZone({
 
   if (currentPath || fileName) {
     return (
-      <div className="flex items-center gap-3 rounded-lg border px-3 py-2">
-        <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
-        <span className="text-sm truncate flex-1">
+      <div className="flex items-center gap-3 rounded-lg border bg-muted/40 px-3 py-2.5">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+          <FileText className="h-4 w-4" aria-hidden="true" />
+        </span>
+        <span className="min-w-0 flex-1 truncate text-sm font-medium">
           {fileName || "PDF uploaded"}
         </span>
         {uploading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" aria-label="Uploading" />
         ) : (
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="h-6 w-6 shrink-0"
+            className="h-8 w-8 shrink-0"
+            aria-label="Remove PDF"
             onClick={() => {
               setFileName(null);
               onRemove();
             }}
           >
-            <X className="h-3 w-3" />
+            <X className="h-4 w-4" aria-hidden="true" />
           </Button>
         )}
       </div>
@@ -123,14 +126,16 @@ export function PdfUploadZone({
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-6 transition-colors ${
+        className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-6 text-center transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background ${
           dragActive
-            ? "border-primary bg-accent/50"
-            : "border-muted-foreground/25"
+            ? "border-primary bg-primary/5"
+            : "border-border bg-muted/30 hover:border-primary/50"
         }`}
       >
-        <FileUp className="h-8 w-8 text-muted-foreground mb-2" />
-        <p className="text-sm text-muted-foreground mb-2">
+        <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <FileUp className="h-5 w-5" aria-hidden="true" />
+        </span>
+        <p className="mb-3 text-sm text-muted-foreground">
           Drag & drop a PDF bill, or
         </p>
         <label>
@@ -160,11 +165,15 @@ export function PdfUploadZone({
             </span>
           </Button>
         </label>
-        <p className="text-xs text-muted-foreground mt-2">
+        <p className="mt-3 text-xs text-muted-foreground">
           PDF only, max 10MB
         </p>
       </div>
-      {error && <p className="text-sm text-destructive mt-1">{error}</p>}
+      {error && (
+        <p role="alert" className="mt-1.5 text-sm text-destructive">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

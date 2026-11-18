@@ -145,8 +145,8 @@ export function UtilityAccountsCard({
     <Card>
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-4 space-y-0">
         <div className="space-y-1">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Plug className="h-4 w-4" aria-hidden="true" />
+          <CardTitle className="flex items-center gap-2 font-display text-lg">
+            <Plug className="h-4 w-4 text-primary" aria-hidden="true" />
             {title}
           </CardTitle>
           <CardDescription>{description}</CardDescription>

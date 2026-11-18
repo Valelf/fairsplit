@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
+import { ChartFrame, CHART_INITIAL_DIMENSION } from "@/components/shared/chart-frame";
 import type { UserGrowthPoint } from "@/lib/queries/analytics";
 import { EmptyPanel } from "@/components/shared/empty-panel";
 import { Users } from "lucide-react";
@@ -43,7 +44,8 @@ export function UserGrowthChart({ data }: UserGrowthChartProps) {
   }
 
   return (
-    <ResponsiveContainer width="100%" height={260}>
+    <ChartFrame className="h-[260px] sm:h-[260px]" label="Monthly owner and tenant sign-ups">
+    <ResponsiveContainer width="100%" height="100%" initialDimension={CHART_INITIAL_DIMENSION}>
       <BarChart data={chartData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
         <XAxis
@@ -80,5 +82,6 @@ export function UserGrowthChart({ data }: UserGrowthChartProps) {
         />
       </BarChart>
     </ResponsiveContainer>
+    </ChartFrame>
   );
 }

@@ -22,7 +22,7 @@ export function CycleStatusActions({ cycleId, label, status }: CycleStatusAction
   return (
     <>
       <Button variant="outline" onClick={() => setOpen(true)}>
-        {closed ? <LockOpen className="mr-2 h-4 w-4" /> : <Lock className="mr-2 h-4 w-4" />}
+        {closed ? <LockOpen className="mr-2 h-4 w-4" aria-hidden="true" /> : <Lock className="mr-2 h-4 w-4" aria-hidden="true" />}
         {closed ? "Reopen cycle" : "Close cycle"}
       </Button>
       <ConfirmDialog
