@@ -6,13 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { AuthFrame } from "@/components/layout/auth-frame";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Mail, Loader2, CheckCircle2, KeyRound } from "lucide-react";
 
@@ -86,18 +80,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">FairSplit</CardTitle>
-          <CardDescription>
-            Fair utility bill splitting for shared housing
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+    <AuthFrame
+      title={sent ? undefined : "Sign in"}
+      description={sent ? undefined : "See your bills, your share and who has paid."}
+    >
+        <div>
           {sent ? (
             <div className="flex flex-col items-center gap-4 py-4">
-              <CheckCircle2 className="h-12 w-12 text-green-500" />
+              <CheckCircle2 className="h-12 w-12 text-success" aria-hidden="true" />
               <div className="text-center">
                 <p className="font-medium">Check your email</p>
                 <p className="text-sm text-muted-foreground mt-1">
@@ -121,7 +111,7 @@ export default function LoginPage() {
             <Tabs defaultValue="password" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="password">Password</TabsTrigger>
-                <TabsTrigger value="magic-link">Magic Link</TabsTrigger>
+                <TabsTrigger value="magic-link">Email link</TabsTrigger>
               </TabsList>
 
               <TabsContent value="password" className="mt-4">
@@ -153,16 +143,16 @@ export default function LoginPage() {
                   </div>
 
                   {error && (
-                    <p className="text-sm text-destructive">{error}</p>
+                    <p role="alert" className="text-sm text-destructive">{error}</p>
                   )}
 
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
                     ) : (
-                      <KeyRound className="mr-2 h-4 w-4" />
+                      <KeyRound className="mr-2 h-4 w-4" aria-hidden="true" />
                     )}
-                    Sign In
+                    Sign in
                   </Button>
                 </form>
               </TabsContent>
@@ -183,16 +173,16 @@ export default function LoginPage() {
                   </div>
 
                   {error && (
-                    <p className="text-sm text-destructive">{error}</p>
+                    <p role="alert" className="text-sm text-destructive">{error}</p>
                   )}
 
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
                     ) : (
-                      <Mail className="mr-2 h-4 w-4" />
+                      <Mail className="mr-2 h-4 w-4" aria-hidden="true" />
                     )}
-                    Send Magic Link
+                    Email me a sign-in link
                   </Button>
 
                   <p className="text-xs text-center text-muted-foreground">
@@ -203,8 +193,7 @@ export default function LoginPage() {
               </TabsContent>
             </Tabs>
           )}
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+    </AuthFrame>
   );
 }

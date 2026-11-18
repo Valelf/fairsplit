@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AuthFrame } from "@/components/layout/auth-frame";
 import { Loader2, CheckCircle2, AlertCircle, Mail } from "lucide-react";
 
 type Invite = {
@@ -109,7 +109,7 @@ export default function ClaimInvitePage() {
 
   if (state === "loading" || state === "claiming") {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3" role="status">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-3" role="status">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-hidden="true" />
         <p className="text-sm text-muted-foreground">
           {state === "claiming" ? "Linking your account…" : "Checking your invite…"}
@@ -124,20 +124,18 @@ export default function ClaimInvitePage() {
     body: React.ReactNode,
     action = true
   ) => (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <Card className="w-full max-w-md">
-        <CardContent className="flex flex-col items-center py-8 text-center">
-          {icon}
-          <h1 className="mt-4 text-lg font-semibold">{title}</h1>
-          <p className="mt-2 text-sm text-muted-foreground">{body}</p>
-          {action && (
-            <Button className="mt-4" onClick={() => router.push("/login")}>
-              Go to sign in
-            </Button>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+    <AuthFrame>
+      <div className="flex flex-col items-start">
+        {icon}
+        <h1 className="mt-6 text-3xl font-bold leading-tight">{title}</h1>
+        <p className="mt-2 text-muted-foreground">{body}</p>
+        {action && (
+          <Button className="mt-8 w-full" size="lg" onClick={() => router.push("/login")}>
+            Go to sign in
+          </Button>
+        )}
+      </div>
+    </AuthFrame>
   );
 
   if (state === "not_found")
@@ -154,13 +152,13 @@ export default function ClaimInvitePage() {
     );
   if (state === "already_claimed")
     return message(
-      <CheckCircle2 className="h-12 w-12 text-green-600" aria-hidden="true" />,
+      <CheckCircle2 className="h-12 w-12 text-success" aria-hidden="true" />,
       "Already claimed",
       "This invite has already been used. Sign in with the invited email to see your bills."
     );
   if (state === "sent")
     return message(
-      <CheckCircle2 className="h-12 w-12 text-green-600" aria-hidden="true" />,
+      <CheckCircle2 className="h-12 w-12 text-success" aria-hidden="true" />,
       "Check your email",
       <>
         We sent a sign-in link to <strong>{invite?.email}</strong>. Open it on this device to finish
@@ -176,18 +174,18 @@ export default function ClaimInvitePage() {
     );
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Welcome to FairSplit</CardTitle>
-          <CardDescription>
-            You&apos;ve been invited to <strong>{invite?.property_name}</strong>
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="rounded-lg border bg-muted/50 p-4">
+    <AuthFrame
+      title="Welcome to FairSplit"
+      description={
+        <>
+          You&apos;ve been invited to <strong className="text-foreground">{invite?.property_name}</strong>
+        </>
+      }
+    >
+        <div className="space-y-5">
+          <div className="rounded-xl bg-accent p-4 text-accent-foreground">
             <p className="text-sm font-medium">Hi {invite?.display_name},</p>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-1 text-sm">
               Your landlord uses FairSplit to share utility bills. You&apos;ll see your share of each
               bill and exactly how it was worked out.
             </p>
@@ -196,7 +194,7 @@ export default function ClaimInvitePage() {
             <Label htmlFor="email">Invited email</Label>
             <Input id="email" type="email" value={invite?.email ?? ""} disabled readOnly />
           </div>
-          <Button className="w-full" onClick={sendLink} disabled={state === "sending"}>
+          <Button className="w-full" size="lg" onClick={sendLink} disabled={state === "sending"}>
             {state === "sending" ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
             ) : (
@@ -204,8 +202,7 @@ export default function ClaimInvitePage() {
             )}
             Email me a sign-in link
           </Button>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+    </AuthFrame>
   );
 }
