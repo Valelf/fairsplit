@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BrandLockup } from "@/components/layout/brand-mark";
 import { redirect } from "next/navigation";
 import { PartyPopper } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BecomeOwnerCard } from "@/components/owner/onboarding/become-owner-card";
 import { OnboardingProgress } from "@/components/owner/onboarding/onboarding-progress";
@@ -125,9 +126,9 @@ export default async function OnboardingPage({ searchParams }: { searchParams: {
       />
       <Card>
         <CardHeader>
-          <CardTitle role="heading" aria-level={1} className="text-xl">
+          <h1 className="font-display text-2xl font-semibold leading-tight tracking-tight">
             {copy.title}
-          </CardTitle>
+          </h1>
           <CardDescription>{copy.description}</CardDescription>
         </CardHeader>
         <CardContent>
@@ -159,7 +160,7 @@ export default async function OnboardingPage({ searchParams }: { searchParams: {
                   You can add houses, tenants and bills any time from your dashboard.
                 </p>
               )}
-              <div className="flex items-start gap-3 rounded-lg border p-4">
+              <div className="flex items-start gap-3 rounded-lg border bg-primary/5 p-4">
                 <PartyPopper className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
                 <div className="text-sm">
                   <p className="font-medium">What&apos;s next</p>
@@ -191,9 +192,11 @@ export default async function OnboardingPage({ searchParams }: { searchParams: {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="min-h-screen bg-background px-4 py-8 sm:py-12">
+    <main className="min-h-dvh bg-background px-4 py-6 sm:py-12">
       <div className="mx-auto w-full max-w-2xl space-y-6">
-        <p className="text-center text-lg font-bold tracking-tight">FairSplit</p>
+        <Link href="/" aria-label="FairSplit home" className="mx-auto block w-fit rounded-md">
+          <BrandLockup />
+        </Link>
         {children}
       </div>
     </main>

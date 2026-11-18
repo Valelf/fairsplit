@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AuthFrame } from "@/components/layout/auth-frame";
 import { CheckCircle2, Loader2, Mail } from "lucide-react";
 
 const signupSchema = z.object({
@@ -48,18 +48,16 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Create your landlord account</CardTitle>
-          <CardDescription>Split utility bills fairly, by the days each tenant lived there</CardDescription>
-        </CardHeader>
-        <CardContent>
+    <AuthFrame
+      title={sent ? undefined : "Create your landlord account"}
+      description={sent ? undefined : "Split utility bills fairly, by the days each tenant lived there"}
+    >
+        <div>
           {sent ? (
             <div className="flex flex-col items-center gap-4 py-4 text-center" role="status">
-              <CheckCircle2 className="h-12 w-12 text-green-600" aria-hidden="true" />
+              <CheckCircle2 className="h-12 w-12 text-success" aria-hidden="true" />
               <div>
-                <p className="font-medium">Check your email</p>
+                <h1 className="font-display text-2xl font-semibold">Check your email</h1>
                 <p className="mt-1 text-sm text-muted-foreground">
                   We sent a sign-in link to <strong>{email.trim()}</strong>. Open it on this device to set up
                   your first house.
@@ -97,12 +95,12 @@ export default function SignupPage() {
               </div>
 
               {error && (
-                <p className="text-sm text-destructive" role="alert">
+                <p className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive" role="alert">
                   {error}
                 </p>
               )}
 
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="h-auto min-h-10 w-full whitespace-normal py-2" disabled={loading}>
                 {loading ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
                 ) : (
@@ -119,14 +117,13 @@ export default function SignupPage() {
 
               <p className="text-center text-sm text-muted-foreground">
                 Already have an account?{" "}
-                <Link href="/login" className="font-medium text-foreground underline underline-offset-4">
+                <Link href="/login" className="rounded-sm font-medium text-foreground underline underline-offset-4 hover:text-primary">
                   Sign in
                 </Link>
               </p>
             </form>
           )}
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+    </AuthFrame>
   );
 }
