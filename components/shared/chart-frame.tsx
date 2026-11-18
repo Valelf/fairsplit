@@ -12,6 +12,13 @@ interface ChartFrameProps {
 }
 
 /**
+ * Positive placeholder size for ResponsiveContainer's first render. Recharts 3
+ * starts at -1 x -1 until its ResizeObserver fires, which logs a warning;
+ * the real size replaces this on the first measurement.
+ */
+export const CHART_INITIAL_DIMENSION = { width: 320, height: 256 };
+
+/**
  * Sized, client-only wrapper for Recharts' ResponsiveContainer.
  *
  * ResponsiveContainer measures its parent in the browser; during SSR (and the

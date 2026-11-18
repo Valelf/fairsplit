@@ -9,7 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { ChartFrame } from "@/components/shared/chart-frame";
+import { ChartFrame, CHART_INITIAL_DIMENSION } from "@/components/shared/chart-frame";
 import type { MonthlyTotal } from "@/lib/queries/analytics";
 import {
   chartCategoryTick,
@@ -42,7 +42,7 @@ export function SpendingTrendChart({ data }: SpendingTrendChartProps) {
 
   return (
     <ChartFrame label="Monthly spending trend">
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" initialDimension={CHART_INITIAL_DIMENSION}>
         <LineChart data={chartData} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke={chartGridStroke} vertical={false} />
           <XAxis
