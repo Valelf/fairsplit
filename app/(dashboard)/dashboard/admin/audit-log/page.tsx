@@ -1,71 +1,98 @@
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+import Link from "next/link";
+import { requireAdminPage } from "@/lib/server/admin-guard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AuditLogTable } from "@/components/admin/audit-log-table";
+import { AuditLogTable, type AuditPerson } from "@/components/admin/audit-log-table";
+import { AuditLogFilters } from "@/components/admin/audit-log-filters";
 import { getAuditLog } from "@/lib/actions/admin";
+import { auditActionLabel } from "@/lib/admin/audit-format";
+import { cn } from "@/lib/utils";
 
 interface PageProps {
-  searchParams: { page?: string };
+  searchParams: { page?: string; action?: string; actor?: string };
 }
 
+const PAGE_SIZE = 25;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export default async function AuditLogPage({ searchParams }: PageProps) {
-  const supabase = createClient();
+  const { supabase } = await requireAdminPage();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const page = Math.max(1, parseInt(searchParams.page || "1") || 1);
+  const action = searchParams.action || undefined;
+  const actor = searchParams.actor && UUID_RE.test(searchParams.actor) ? searchParams.actor : undefined;
 
-  if (!user) redirect("/login");
+  const [{ data: entries, total }, { data: facetRows }] = await Promise.all([
+    getAuditLog({ page, pageSize: PAGE_SIZE, action, actorId: actor }),
+    // Small table during the pilot: fetch facets directly.
+    supabase.from("audit_log").select("action, user_id").limit(5000),
+  ]);
 
-  // Verify admin role
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
+  const actionValues = Array.from(new Set((facetRows || []).map((r) => r.action))).sort();
+  const actorIds = Array.from(new Set((facetRows || []).map((r) => r.user_id).filter((v): v is string => !!v)));
 
-  if (profile?.role !== "admin") redirect("/login");
+  // Profiles for actors + subjects shown on this page
+  const subjectIds = entries.flatMap((e) => [e.user_id, e.record_id, e.new_data?.user_id as string | undefined]);
+  const personIds = Array.from(
+    new Set([...actorIds, ...subjectIds].filter((v): v is string => typeof v === "string" && UUID_RE.test(v)))
+  );
+  const { data: people } = personIds.length
+    ? await supabase.from("profiles").select("id, full_name, email").in("id", personIds)
+    : { data: [] as AuditPerson[] };
+  const peopleMap: Record<string, AuditPerson> = Object.fromEntries((people || []).map((p) => [p.id, p]));
 
-  const page = parseInt(searchParams.page || "1");
-  const { data: entries, total } = await getAuditLog({ page, pageSize: 20 });
-
-  const totalPages = Math.ceil(total / 20);
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const pageHref = (p: number) => {
+    const params = new URLSearchParams();
+    if (action) params.set("action", action);
+    if (actor) params.set("actor", actor);
+    if (p > 1) params.set("page", String(p));
+    const qs = params.toString();
+    return `/dashboard/admin/audit-log${qs ? `?${qs}` : ""}`;
+  };
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Audit Log</h1>
-        <p className="text-muted-foreground">
-          Track all administrative actions on the platform
-        </p>
+        <p className="text-muted-foreground">Every administrative action on the platform</p>
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="space-y-4">
           <CardTitle>
-            Activity Log ({total} {total === 1 ? "entry" : "entries"})
+            Activity ({total} {total === 1 ? "entry" : "entries"})
           </CardTitle>
+          <AuditLogFilters
+            actions={actionValues.map((a) => ({ value: a, label: auditActionLabel(a) }))}
+            actors={actorIds.map((id) => ({
+              value: id,
+              label: peopleMap[id]?.full_name || peopleMap[id]?.email || id.slice(0, 8),
+            }))}
+          />
         </CardHeader>
         <CardContent>
-          <AuditLogTable entries={entries} />
+          <AuditLogTable entries={entries} people={peopleMap} />
           {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-4">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                (p) => (
-                  <a
-                    key={p}
-                    href={`/dashboard/admin/audit-log?page=${p}`}
-                    className={`px-3 py-1 rounded text-sm ${
-                      p === page
-                        ? "bg-primary text-primary-foreground"
-                        : "hover:bg-accent"
-                    }`}
-                  >
-                    {p}
-                  </a>
-                )
+            <nav aria-label="Audit log pages" className="mt-4 flex items-center justify-center gap-2">
+              {page > 1 && (
+                <Link href={pageHref(page - 1)} className="rounded px-3 py-1 text-sm hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  Previous
+                </Link>
               )}
-            </div>
+              <span className="text-sm text-muted-foreground">
+                Page {page} of {totalPages}
+              </span>
+              {page < totalPages && (
+                <Link
+                  href={pageHref(page + 1)}
+                  className={cn(
+                    "rounded px-3 py-1 text-sm hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  )}
+                >
+                  Next
+                </Link>
+              )}
+            </nav>
           )}
         </CardContent>
       </Card>
