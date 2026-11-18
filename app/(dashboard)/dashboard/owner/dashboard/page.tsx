@@ -9,6 +9,7 @@ import Link from "next/link";
 import { getOwnerSpendingTrend, getOwnerCategoryBreakdown } from "@/lib/queries/analytics";
 import { SpendingTrendChart } from "@/components/shared/spending-trend-chart";
 import { CategoryBreakdownChart } from "@/components/shared/category-breakdown-chart";
+import { OnboardingEmptyState } from "@/components/owner/onboarding-empty-state";
 
 // Valid UUID that matches no row; keeps .in() queries valid when the list is empty.
 const NO_MATCH_UUID = "00000000-0000-0000-0000-000000000000";
@@ -28,6 +29,15 @@ export default async function OwnerDashboardPage() {
     .select("*")
     .eq("owner_id", user.id)
     .is("deleted_at", null);
+
+  if (!properties || properties.length === 0) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+        <OnboardingEmptyState />
+      </div>
+    );
+  }
 
   const propertyIds = properties?.map((p) => p.id) || [];
 
