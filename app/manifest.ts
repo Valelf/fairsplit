@@ -1,7 +1,10 @@
 import type { MetadataRoute } from "next";
-import { BRAND_TEAL, PAPER } from "./_pwa/app-icon";
 
-/** Lets tenants add FairSplit to their home screen. No service worker: it always loads live data. */
+/**
+ * Lets tenants add FairSplit to their home screen. No service worker: it always loads live data.
+ * Colors match --brand (#0B7A63) and --background (#F5F7F6) in globals.css. PNG icons live in
+ * public/icons (drawn from the brand glyph; app/icon.svg is the vector source).
+ */
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "FairSplit",
@@ -11,8 +14,8 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    theme_color: BRAND_TEAL,
-    background_color: PAPER,
+    theme_color: "#0B7A63",
+    background_color: "#F5F7F6",
     icons: [
       { src: "/icon.svg", sizes: "any", type: "image/svg+xml" },
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
