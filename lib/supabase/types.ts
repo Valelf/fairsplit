@@ -116,6 +116,18 @@ export type Bill = {
   updated_at: string;
   /** Utility account this bill belongs to (Phase 2). */
   utility_account_id?: string | null;
+  /** How the bill is split (Phase 2 split rules); DB default 'person_days'. */
+  split_method?: BillSplitMethod;
+};
+
+export type BillSplitMethod = "person_days" | "equal_present";
+
+export type BillSplitExclusion = {
+  bill_id: string;
+  property_tenant_id: string;
+  property_id: string;
+  reason: string | null;
+  created_at: string;
 };
 
 export type UtilityAccount = {
@@ -146,6 +158,8 @@ export type BillSplit = {
   confirmed_at?: string | null;
   confirmed_by?: string | null;
   payment_note?: string | null;
+  /** People sharing the bill; set only for split_method 'equal_present' (Phase 2 split rules). */
+  share_count?: number | null;
   created_at: string;
   updated_at: string;
 };
@@ -445,6 +459,27 @@ export interface Database {
             columns: ["property_id"];
             isOneToOne: false;
             referencedRelation: "properties";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      bill_split_exclusions: {
+        Row: BillSplitExclusion;
+        Insert: Omit<BillSplitExclusion, "created_at" | "property_id"> & { property_id?: string };
+        Update: Partial<Pick<BillSplitExclusion, "reason">>;
+        Relationships: [
+          {
+            foreignKeyName: "bill_split_exclusions_bill_id_fkey";
+            columns: ["bill_id"];
+            isOneToOne: false;
+            referencedRelation: "bills";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bill_split_exclusions_property_tenant_id_fkey";
+            columns: ["property_tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "property_tenants";
             referencedColumns: ["id"];
           }
         ];
