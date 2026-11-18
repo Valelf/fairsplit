@@ -25,17 +25,35 @@ import {
 } from "@/components/ui/select";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { BILL_CATEGORY_OPTIONS } from "@/lib/utilities/categories";
+import {
+  SplitRulesField,
+  splitRulesToInput,
+  type SplitRuleTenant,
+  type SplitRulesValue,
+} from "@/components/owner/split-rules-field";
 
 type EditableBill = Pick<
   Bill,
-  "id" | "category" | "provider" | "amount_cents" | "service_start" | "service_end" | "notes"
+  "id" | "category" | "provider" | "amount_cents" | "service_start" | "service_end" | "notes" | "split_method"
 >;
 
 const CATEGORIES: { value: BillCategory; label: string }[] = BILL_CATEGORY_OPTIONS;
 
+interface BillActionsProps {
+  bill: EditableBill;
+  /** Property tenants and this bill's exclusions, for the split-rule controls. */
+  tenants?: SplitRuleTenant[];
+  exclusions?: { property_tenant_id: string; reason: string | null }[];
+}
+
 /** Edit / delete menu for one bill on the owner cycle page. Hidden when the cycle is closed. */
-export function BillActions({ bill }: { bill: EditableBill }) {
+export function BillActions({ bill, tenants = [], exclusions = [] }: BillActionsProps) {
   const router = useRouter();
+  const initialRules = (): SplitRulesValue => ({
+    method: bill.split_method ?? "person_days",
+    exclusions: Object.fromEntries(exclusions.map((e) => [e.property_tenant_id, e.reason ?? ""])),
+  });
+  const [splitRules, setSplitRules] = useState<SplitRulesValue>(initialRules);
   const [dialog, setDialog] = useState<null | "edit" | "delete">(null);
   const [category, setCategory] = useState<BillCategory>(bill.category);
   const [provider, setProvider] = useState(bill.provider);
@@ -49,6 +67,7 @@ export function BillActions({ bill }: { bill: EditableBill }) {
     setAmount(centsToInput(bill.amount_cents));
     setStart(bill.service_start);
     setEnd(bill.service_end);
+    setSplitRules(initialRules());
     setDialog("edit");
   }
 
@@ -81,7 +100,7 @@ export function BillActions({ bill }: { bill: EditableBill }) {
         open={dialog === "edit"}
         onOpenChange={(o) => setDialog(o ? "edit" : null)}
         title="Edit bill"
-        description="Saving re-splits this bill between tenants by person-days."
+        description="Saving re-splits this bill between tenants using the rule below."
         confirmLabel="Save and re-split"
         onConfirm={async () => {
           const cents = dollarsToCents(amount);
@@ -93,6 +112,7 @@ export function BillActions({ bill }: { bill: EditableBill }) {
             service_start: start,
             service_end: end,
             notes: bill.notes,
+            ...splitRulesToInput(splitRules),
           });
           if (result.error) return result.error;
           router.refresh();
@@ -147,6 +167,14 @@ export function BillActions({ bill }: { bill: EditableBill }) {
               />
             </div>
           </div>
+          <SplitRulesField
+            tenants={tenants}
+            value={splitRules}
+            onChange={setSplitRules}
+            amountCents={dollarsToCents(amount)}
+            serviceStart={start}
+            serviceEnd={end}
+          />
         </div>
       </ConfirmDialog>
 

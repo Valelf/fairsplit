@@ -60,6 +60,18 @@ export default async function CycleDetailPage({ params }: PageProps) {
     .eq("property_id", params.propertyId)
     .order("display_name");
 
+  // Split-rule exclusions per bill (for the edit dialog)
+  const { data: exclusions } = await supabase
+    .from("bill_split_exclusions")
+    .select("bill_id, property_tenant_id, reason")
+    .in("bill_id", bills?.map((b) => b.id) || []);
+  const splitTenants = (tenants ?? []).map((t) => ({
+    id: t.id,
+    display_name: t.display_name,
+    join_date: t.join_date,
+    leave_date: t.leave_date,
+  }));
+
   const totalBilledCents =
     bills?.reduce((sum, b) => sum + b.amount_cents, 0) || 0;
 
@@ -147,7 +159,11 @@ export default async function CycleDetailPage({ params }: PageProps) {
                     {bill.category}
                   </CardTitle>
                   {cycle.status !== "closed" ? (
-                    <BillActions bill={bill} />
+                    <BillActions
+                      bill={bill}
+                      tenants={splitTenants}
+                      exclusions={(exclusions ?? []).filter((e) => e.bill_id === bill.id)}
+                    />
                   ) : (
                     <DollarSign className="h-4 w-4 text-muted-foreground" />
                   )}

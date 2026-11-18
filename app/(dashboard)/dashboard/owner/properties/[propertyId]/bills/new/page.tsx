@@ -27,7 +27,7 @@ export default async function NewBillPage({ params, searchParams }: PageProps) {
   const cycleId = typeof searchParams.cycleId === "string" ? searchParams.cycleId : "";
   const accountId = typeof searchParams.accountId === "string" ? searchParams.accountId : null;
 
-  const [{ data: cycle }, accounts] = await Promise.all([
+  const [{ data: cycle }, accounts, { data: tenants }] = await Promise.all([
     cycleId
       ? supabase
           .from("billing_cycles")
@@ -37,6 +37,11 @@ export default async function NewBillPage({ params, searchParams }: PageProps) {
           .maybeSingle()
       : Promise.resolve({ data: null }),
     getUtilityAccountsWithLastBill(property.id, { activeOnly: true }),
+    supabase
+      .from("property_tenants")
+      .select("id, display_name, join_date, leave_date")
+      .eq("property_id", property.id)
+      .order("join_date"),
   ]);
 
   return (
@@ -53,6 +58,7 @@ export default async function NewBillPage({ params, searchParams }: PageProps) {
         lastBill: a.lastBill,
       }))}
       initialAccountId={accountId}
+      tenants={tenants ?? []}
     />
   );
 }

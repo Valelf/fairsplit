@@ -23,6 +23,13 @@ import {
 } from "@/components/ui/select";
 import { PdfUploadZone } from "@/components/shared/pdf-upload-zone";
 import { ConfidenceBadge } from "@/components/shared/confidence-badge";
+import {
+  DEFAULT_SPLIT_RULES,
+  SplitRulesField,
+  splitRulesToInput,
+  type SplitRuleTenant,
+  type SplitRulesValue,
+} from "@/components/owner/split-rules-field";
 
 type ConfidenceLevel = "high" | "medium" | "low";
 type FieldConfidence = Record<string, ConfidenceLevel>;
@@ -42,6 +49,8 @@ interface NewBillFormProps {
   cycle?: { start_date: string | null; end_date: string | null } | null;
   accounts?: NewBillAccount[];
   initialAccountId?: string | null;
+  /** Property tenants, for the split-rule controls and preview. */
+  tenants?: SplitRuleTenant[];
 }
 
 const NO_ACCOUNT = "none";
@@ -89,7 +98,9 @@ export function NewBillForm({
   cycle = null,
   accounts = [],
   initialAccountId = null,
+  tenants = [],
 }: NewBillFormProps) {
+  const [splitRules, setSplitRules] = useState<SplitRulesValue>(DEFAULT_SPLIT_RULES);
   const router = useRouter();
   const initialAccount = accounts.find((a) => a.id === initialAccountId);
   const [accountId, setAccountId] = useState<string>(initialAccount?.id ?? NO_ACCOUNT);
@@ -195,6 +206,7 @@ export function NewBillForm({
       pdf_storage_path: pdfPath || undefined,
       notes: notes || undefined,
       utility_account_id: selectedAccount?.id ?? null,
+      ...splitRulesToInput(splitRules),
     });
 
     if (result.error) {
@@ -399,6 +411,15 @@ export function NewBillForm({
                 />
               </div>
             </div>
+
+            <SplitRulesField
+              tenants={tenants}
+              value={splitRules}
+              onChange={setSplitRules}
+              amountCents={dollarsToCents(fields.amount)}
+              serviceStart={fields.service_start}
+              serviceEnd={fields.service_end}
+            />
 
             <div className="space-y-2">
               <Label htmlFor="notes">Notes (Optional)</Label>
