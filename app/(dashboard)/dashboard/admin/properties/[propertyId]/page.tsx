@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { CalendarRange, Receipt, Users } from "lucide-react";
 import { requireAdminPage } from "@/lib/server/admin-guard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,10 @@ import {
 } from "@/components/ui/table";
 import { formatCents, formatDate, formatDateRange } from "@/lib/utils";
 import type { TenantStatus } from "@/lib/supabase/types";
+import type { BadgeProps } from "@/components/ui/badge";
+import { PageHeading } from "@/components/layout/page-heading";
+import { EmptyPanel } from "@/components/shared/empty-panel";
+import { CycleStatePill } from "@/components/shared/cycle-state-pill";
 
 interface PageProps {
   params: { propertyId: string };
@@ -23,10 +27,10 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const linkClass =
   "rounded-sm underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
-const tenantStatusVariant: Record<TenantStatus, "default" | "secondary" | "outline"> = {
-  active: "default",
-  invited: "secondary",
-  departed: "outline",
+const tenantStatusVariant: Record<TenantStatus, BadgeProps["variant"]> = {
+  active: "success",
+  invited: "info",
+  departed: "secondary",
 };
 
 export default async function AdminPropertyDetailPage({ params }: PageProps) {
@@ -65,20 +69,21 @@ export default async function AdminPropertyDetailPage({ params }: PageProps) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <Link href="/dashboard/admin/properties" className={`inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground ${linkClass}`}>
-          <ArrowLeft className="h-4 w-4" /> All properties
-        </Link>
-        <div className="mt-2 flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-bold tracking-tight">{property.name}</h1>
-          {property.deleted_at && <Badge variant="outline">Deleted {formatDate(property.deleted_at)}</Badge>}
-        </div>
-        <p className="text-muted-foreground">
-          {property.address_line1}
-          {property.address_line2 ? `, ${property.address_line2}` : ""}, {property.city}, {property.state}{" "}
-          {property.zip_code}
-        </p>
-        <p className="mt-1 text-sm">
+      <div className="space-y-2">
+        <PageHeading
+          backHref="/dashboard/admin/properties"
+          backLabel="All properties"
+          title={property.name}
+          badges={property.deleted_at ? <Badge variant="danger">Deleted {formatDate(property.deleted_at)}</Badge> : undefined}
+          description={
+            <>
+              {property.address_line1}
+              {property.address_line2 ? `, ${property.address_line2}` : ""}, {property.city}, {property.state}{" "}
+              {property.zip_code}
+            </>
+          }
+        />
+        <p className="text-sm">
           Owner:{" "}
           {owner ? (
             <Link href={`/dashboard/admin/users/${owner.id}`} className={`font-medium ${linkClass}`}>
@@ -87,13 +92,16 @@ export default async function AdminPropertyDetailPage({ params }: PageProps) {
           ) : (
             "—"
           )}
-          <span className="text-muted-foreground"> · {property.transparency_level === "full" ? "Full transparency" : "Own share only"}</span>
+          <span className="text-muted-foreground">. {property.transparency_level === "full" ? "Full transparency" : "Own share only"}</span>
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Tenants ({(tenants || []).length})</CardTitle>
+          <CardTitle className="flex flex-wrap items-baseline gap-2">
+            Tenants
+            <span className="figure text-sm font-normal text-muted-foreground">{(tenants || []).length}</span>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {(tenants || []).length > 0 ? (
@@ -123,7 +131,7 @@ export default async function AdminPropertyDetailPage({ params }: PageProps) {
                           <div className="text-xs text-muted-foreground">{t.email}</div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={tenantStatusVariant[t.status as TenantStatus]}>{t.status}</Badge>
+                          <Badge variant={tenantStatusVariant[t.status as TenantStatus]} className="capitalize">{t.status}</Badge>
                         </TableCell>
                         <TableCell className="whitespace-nowrap text-muted-foreground">
                           {formatDate(t.join_date)} – {t.leave_date ? formatDate(t.leave_date) : "now"}
@@ -132,9 +140,9 @@ export default async function AdminPropertyDetailPage({ params }: PageProps) {
                           {t.claimed_at ? (
                             <span className="text-muted-foreground">Claimed {formatDate(t.claimed_at)}</span>
                           ) : expired ? (
-                            <Badge variant="destructive">Expired {formatDate(t.invite_expires_at!)}</Badge>
+                            <Badge variant="danger">Expired {formatDate(t.invite_expires_at!)}</Badge>
                           ) : t.invite_expires_at ? (
-                            <span>Unclaimed · expires {formatDate(t.invite_expires_at)}</span>
+                            <Badge variant="warning">Unclaimed, expires {formatDate(t.invite_expires_at)}</Badge>
                           ) : (
                             <span className="text-muted-foreground">Unclaimed</span>
                           )}
@@ -146,7 +154,7 @@ export default async function AdminPropertyDetailPage({ params }: PageProps) {
               </Table>
             </div>
           ) : (
-            <p className="py-4 text-sm text-muted-foreground">No tenants yet.</p>
+            <EmptyPanel icon={Users} title="No tenants yet" description="The owner has not invited anyone to this property." />
           )}
         </CardContent>
       </Card>
@@ -154,22 +162,23 @@ export default async function AdminPropertyDetailPage({ params }: PageProps) {
       <div className="grid gap-4 lg:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle>Billing cycles ({(cycles || []).length})</CardTitle>
+            <CardTitle className="flex flex-wrap items-baseline gap-2">
+              Billing cycles
+              <span className="figure text-sm font-normal text-muted-foreground">{(cycles || []).length}</span>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {(cycles || []).length > 0 ? (
-              <ul className="space-y-2 text-sm">
+              <ul className="divide-y text-sm">
                 {(cycles || []).map((c) => (
-                  <li key={c.id} className="flex items-center justify-between gap-2">
+                  <li key={c.id} className="flex items-center justify-between gap-2 py-2 first:pt-0 last:pb-0">
                     <span>{c.label}</span>
-                    <Badge variant={c.status === "open" ? "default" : c.status === "closed" ? "outline" : "secondary"}>
-                      {c.status}
-                    </Badge>
+                    <CycleStatePill status={c.status} />
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-muted-foreground">No cycles yet.</p>
+              <EmptyPanel icon={CalendarRange} title="No cycles yet" className="py-6" />
             )}
           </CardContent>
         </Card>
@@ -202,14 +211,14 @@ export default async function AdminPropertyDetailPage({ params }: PageProps) {
                           {formatDateRange(b.service_start, b.service_end)}
                         </TableCell>
                         <TableCell className="text-muted-foreground">{cycleLabel[b.cycle_id] ?? "—"}</TableCell>
-                        <TableCell className="text-right tabular-nums">{formatCents(b.amount_cents)}</TableCell>
+                        <TableCell className="figure text-right">{formatCents(b.amount_cents)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">No bills yet.</p>
+              <EmptyPanel icon={Receipt} title="No bills yet" description="Bills the owner uploads will list here." />
             )}
           </CardContent>
         </Card>

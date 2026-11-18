@@ -6,6 +6,7 @@ import { AuditLogFilters } from "@/components/admin/audit-log-filters";
 import { getAuditLog } from "@/lib/actions/admin";
 import { auditActionLabel } from "@/lib/admin/audit-format";
 import { cn } from "@/lib/utils";
+import { PageHeading } from "@/components/layout/page-heading";
 
 interface PageProps {
   searchParams: { page?: string; action?: string; actor?: string };
@@ -52,15 +53,15 @@ export default async function AuditLogPage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Audit Log</h1>
-        <p className="text-muted-foreground">Every administrative action on the platform</p>
-      </div>
+      <PageHeading title="Audit log" description="Every administrative action on the platform" />
 
       <Card>
         <CardHeader className="space-y-4">
-          <CardTitle>
-            Activity ({total} {total === 1 ? "entry" : "entries"})
+          <CardTitle className="flex flex-wrap items-baseline gap-2">
+            Activity
+            <span className="figure text-sm font-normal text-muted-foreground">
+              {total} {total === 1 ? "entry" : "entries"}
+            </span>
           </CardTitle>
           <AuditLogFilters
             actions={actionValues.map((a) => ({ value: a, label: auditActionLabel(a) }))}
@@ -75,18 +76,18 @@ export default async function AuditLogPage({ searchParams }: PageProps) {
           {totalPages > 1 && (
             <nav aria-label="Audit log pages" className="mt-4 flex items-center justify-center gap-2">
               {page > 1 && (
-                <Link href={pageHref(page - 1)} className="rounded px-3 py-1 text-sm hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <Link href={pageHref(page - 1)} className="inline-flex h-9 items-center rounded-md border px-3 text-sm hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   Previous
                 </Link>
               )}
-              <span className="text-sm text-muted-foreground">
+              <span className="figure text-sm text-muted-foreground">
                 Page {page} of {totalPages}
               </span>
               {page < totalPages && (
                 <Link
                   href={pageHref(page + 1)}
                   className={cn(
-                    "rounded px-3 py-1 text-sm hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    "inline-flex h-9 items-center rounded-md border px-3 text-sm hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   )}
                 >
                   Next

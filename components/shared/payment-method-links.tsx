@@ -44,7 +44,7 @@ function CopyButton({ value, label }: { value: string; label: string }) {
       }}
       aria-label={`Copy ${label}`}
     >
-      {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+      {copied ? <Check className="mr-2 h-4 w-4" aria-hidden="true" /> : <Copy className="mr-2 h-4 w-4" aria-hidden="true" />}
       {copied ? "Copied" : "Copy"}
     </Button>
   );
@@ -52,10 +52,10 @@ function CopyButton({ value, label }: { value: string; label: string }) {
 
 function MethodRow({ name, detail, children }: { name: string; detail: string; children: React.ReactNode }) {
   return (
-    <li className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between">
+    <li className="flex flex-col gap-3 rounded-lg border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
         <p className="text-sm font-medium">{name}</p>
-        <p className="truncate text-sm text-muted-foreground">{detail}</p>
+        <p className="truncate font-mono text-sm text-muted-foreground">{detail}</p>
       </div>
       <div className="flex flex-wrap gap-2">{children}</div>
     </li>
@@ -70,7 +70,11 @@ export function PaymentMethodLinks({
   emptyMessage = "Your landlord hasn't added payment details yet. Ask them how they'd like to be paid.",
 }: PaymentMethodLinksProps) {
   if (!methods || !hasAnyPaymentMethod(methods)) {
-    return <p className="text-sm text-muted-foreground">{emptyMessage}</p>;
+    return (
+      <p className="rounded-lg border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
+        {emptyMessage}
+      </p>
+    );
   }
 
   const venmo = methods.venmo_handle ? buildVenmoLinks(methods.venmo_handle, amountCents, note) : null;
@@ -121,7 +125,7 @@ export function PaymentMethodLinks({
         )}
       </ul>
       {methods.instructions && (
-        <p className="whitespace-pre-line rounded-lg bg-muted p-3 text-sm">{methods.instructions}</p>
+        <p className="whitespace-pre-line rounded-lg bg-muted p-3 text-sm text-foreground">{methods.instructions}</p>
       )}
       <p className="text-xs text-muted-foreground">
         Payments go straight to your landlord. FairSplit never handles money. Include the note

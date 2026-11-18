@@ -4,6 +4,8 @@ import { requireAdminPage } from "@/lib/server/admin-guard";
 import { MetricCard } from "@/components/shared/metric-card";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PageHeading } from "@/components/layout/page-heading";
+import { EmptyPanel } from "@/components/shared/empty-panel";
 import {
   Table,
   TableBody,
@@ -12,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Activity, Building2, Mail, Receipt, UserCheck, Users } from "lucide-react";
+import { Activity, Building2, Mail, MailCheck, Receipt, UserCheck, Users } from "lucide-react";
 import { formatCents, formatDate } from "@/lib/utils";
 import { getAdminUserGrowth, getAdminBillVolume } from "@/lib/queries/analytics";
 import { UserGrowthChart } from "@/components/admin/user-growth-chart";
@@ -26,12 +28,12 @@ function HeartbeatRow({ label, at, staleAfterHours, expect }: { label: string; a
   const stale = !at || Date.now() - new Date(at).getTime() > staleAfterHours * HOUR;
   return (
     <div className="flex items-start justify-between gap-4">
-      <div>
+      <div className="min-w-0">
         <p className="text-sm font-medium">{label}</p>
         <p className="text-xs text-muted-foreground">{expect}</p>
       </div>
       <div className="text-right">
-        <Badge variant={stale ? "destructive" : "secondary"}>{stale ? "Stale" : "OK"}</Badge>
+        <Badge variant={stale ? "danger" : "success"}>{stale ? "Stale" : "OK"}</Badge>
         <p className="mt-1 text-xs text-muted-foreground">
           {at ? formatDistanceToNow(new Date(at), { addSuffix: true }) : "Never"}
         </p>
@@ -85,12 +87,9 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Admin Dashboard</h1>
-        <p className="text-muted-foreground">Pilot health at a glance</p>
-      </div>
+      <PageHeading title="Admin dashboard" description="Pilot health at a glance" />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
         <MetricCard title="Owners" value={ownerCount || 0} description={`${userCount || 0} users in total`} icon={<Users className="h-4 w-4" />} />
         <MetricCard title="Properties" value={propertyCount || 0} icon={<Building2 className="h-4 w-4" />} />
         <MetricCard title="Active tenants" value={activeTenantCount || 0} icon={<UserCheck className="h-4 w-4" />} />
@@ -99,6 +98,7 @@ export default async function AdminDashboardPage() {
           value={monthBillCount}
           description={`${formatCents(monthBilledCents)} added in ${monthLabel} · ${formatCents(totalBilledCents)} all time`}
           icon={<Receipt className="h-4 w-4" />}
+          className="col-span-2 sm:col-span-1"
         />
         <MetricCard
           title="Pending invites"
@@ -112,7 +112,7 @@ export default async function AdminDashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5" /> System heartbeat
+              <Activity className="h-5 w-5 text-primary" aria-hidden="true" /> System heartbeat
             </CardTitle>
             <CardDescription>Keeps the free-tier database awake and runs nightly housekeeping</CardDescription>
           </CardHeader>
@@ -133,7 +133,7 @@ export default async function AdminDashboardPage() {
                 />
               </>
             ) : (
-              <p className="text-sm text-muted-foreground">Heartbeat row not found.</p>
+              <p className="text-sm text-muted-foreground">No heartbeat recorded yet. It appears after the first nightly cron run.</p>
             )}
           </CardContent>
         </Card>
@@ -174,7 +174,7 @@ export default async function AdminDashboardPage() {
                           <TableCell className="whitespace-nowrap">
                             {i.invite_expires_at ? (
                               expired ? (
-                                <Badge variant="destructive">Expired {formatDate(i.invite_expires_at)}</Badge>
+                                <Badge variant="danger">Expired {formatDate(i.invite_expires_at)}</Badge>
                               ) : (
                                 formatDate(i.invite_expires_at)
                               )
@@ -188,11 +188,11 @@ export default async function AdminDashboardPage() {
                   </TableBody>
                 </Table>
                 {invites.length > 10 && (
-                  <p className="mt-2 text-xs text-muted-foreground">And {invites.length - 10} more.</p>
+                  <p className="mt-2 text-xs text-muted-foreground">And <span className="figure">{invites.length - 10}</span> more.</p>
                 )}
               </div>
             ) : (
-              <p className="py-4 text-sm text-muted-foreground">Every invite has been claimed.</p>
+              <EmptyPanel icon={MailCheck} title="Every invite has been claimed" description="New tenant invites show here until they join." />
             )}
           </CardContent>
         </Card>
@@ -201,7 +201,7 @@ export default async function AdminDashboardPage() {
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>User Growth</CardTitle>
+            <CardTitle>User growth</CardTitle>
             <CardDescription>New users by month</CardDescription>
           </CardHeader>
           <CardContent>
@@ -211,7 +211,7 @@ export default async function AdminDashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Bill Volume</CardTitle>
+            <CardTitle>Bill volume</CardTitle>
             <CardDescription>Monthly billing totals</CardDescription>
           </CardHeader>
           <CardContent>

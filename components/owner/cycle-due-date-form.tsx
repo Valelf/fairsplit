@@ -23,7 +23,7 @@ export function CycleDueDateForm({ cycleId, propertyId, dueDate }: CycleDueDateF
 
   return (
     <form
-      className="flex flex-wrap items-end gap-2"
+      className="flex w-full flex-wrap items-end gap-2 sm:w-auto"
       onSubmit={(e) => {
         e.preventDefault();
         setError(null);
@@ -34,17 +34,19 @@ export function CycleDueDateForm({ cycleId, propertyId, dueDate }: CycleDueDateF
         });
       }}
     >
-      <div className="space-y-1">
-        <Label htmlFor={inputId}>Due date</Label>
+      <div className="min-w-0 flex-1 space-y-1 sm:flex-none">
+        <Label htmlFor={inputId} className="text-xs text-muted-foreground">
+          Due date
+        </Label>
         <Input
           id={inputId}
           type="date"
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          className="w-auto"
+          className="figure w-full sm:w-auto"
         />
       </div>
-      <Button type="submit" size="sm" variant="outline" disabled={pending || value === (dueDate ?? "")}>
+      <Button type="submit" variant="outline" className="h-10" disabled={pending || value === (dueDate ?? "")}>
         {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
         Save
       </Button>

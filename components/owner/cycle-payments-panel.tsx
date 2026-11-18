@@ -2,13 +2,23 @@ import { Wallet } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CycleDueDateForm } from "@/components/owner/cycle-due-date-form";
 import { PaymentLedgerTable } from "@/components/owner/payment-ledger-table";
+import { EmptyPanel } from "@/components/shared/empty-panel";
 import { createClient } from "@/lib/supabase/server";
 import { getOwnerPaymentLedger } from "@/lib/queries/payments";
-import { formatCents } from "@/lib/utils";
+import { cn, formatCents } from "@/lib/utils";
 
 interface CyclePaymentsPanelProps {
   propertyId: string;
   cycleId: string;
+}
+
+function Tally({ label, cents, className }: { label: string; cents: number; className?: string }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className={cn("figure truncate text-base font-medium sm:text-lg", className)}>{formatCents(cents)}</dd>
+    </div>
+  );
 }
 
 /** Owner view of who has paid for one cycle. Self-contained: fetches its own data. */
@@ -29,28 +39,32 @@ export async function CyclePaymentsPanel({ propertyId, cycleId }: CyclePaymentsP
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Wallet className="h-5 w-5" aria-hidden="true" />
+      <CardHeader className="space-y-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="space-y-1">
+            <CardTitle className="flex items-center gap-2 font-display text-lg">
+              <Wallet className="h-5 w-5 text-primary" aria-hidden="true" />
               Payments
             </CardTitle>
-            <CardDescription>
-              {formatCents(collected)} confirmed &middot; {formatCents(awaiting)} awaiting confirmation
-              &middot; {formatCents(owed)} owed
-            </CardDescription>
+            <CardDescription>Who has paid their share of this cycle.</CardDescription>
           </div>
           <CycleDueDateForm cycleId={cycleId} propertyId={propertyId} dueDate={cycle.due_date ?? null} />
         </div>
+        <dl className="grid grid-cols-3 gap-3 rounded-lg bg-muted/60 p-3">
+          <Tally label="Confirmed" cents={collected} className="text-success" />
+          <Tally label="Awaiting" cents={awaiting} className="text-info-soft-foreground" />
+          <Tally label="Owed" cents={owed} className={owed > 0 ? "text-warning-soft-foreground" : undefined} />
+        </dl>
       </CardHeader>
       <CardContent>
         {rows.length > 0 ? (
           <PaymentLedgerTable rows={rows} showProperty={false} showCycle={false} />
         ) : (
-          <p className="text-sm text-muted-foreground">
-            No tenant shares yet. Add a bill to this cycle to see who owes what.
-          </p>
+          <EmptyPanel
+            icon={Wallet}
+            title="No tenant shares yet"
+            description="Add a bill to this cycle to see who owes what."
+          />
         )}
       </CardContent>
     </Card>

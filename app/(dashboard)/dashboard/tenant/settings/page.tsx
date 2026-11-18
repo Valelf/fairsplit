@@ -2,8 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { User, Mail, Calendar, Shield } from "lucide-react";
+import { User, Mail, Calendar, Shield, Home } from "lucide-react";
+import { PageHeading } from "@/components/layout/page-heading";
+import { EmptyPanel } from "@/components/shared/empty-panel";
 import { formatDate } from "@/lib/utils";
 import { EmailRemindersToggle } from "@/components/shared/email-reminders-toggle";
 
@@ -33,102 +34,88 @@ export default async function TenantSettingsPage() {
 
   const allMemberships = memberships || [];
 
+  const fields = [
+    { icon: User, label: "Name", value: profile.full_name },
+    { icon: Mail, label: "Email", value: profile.email },
+    {
+      icon: Shield,
+      label: "Role",
+      value: (
+        <Badge variant="outline" className="capitalize">
+          {profile.role}
+        </Badge>
+      ),
+    },
+    { icon: Calendar, label: "Member since", value: formatDate(profile.created_at) },
+  ];
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground">
-          Your account information
-        </p>
-      </div>
+      <PageHeading title="Settings" description="Your account and the homes you've belonged to." />
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Profile
-            </CardTitle>
+            <CardTitle>Profile</CardTitle>
             <CardDescription>Your account details</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-muted-foreground">
-                Name
-              </label>
-              <p className="text-sm">{profile.full_name}</p>
-            </div>
-            <Separator />
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                <Mail className="h-3 w-3" />
-                Email
-              </label>
-              <p className="text-sm">{profile.email}</p>
-            </div>
-            <Separator />
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                <Shield className="h-3 w-3" />
-                Role
-              </label>
-              <Badge variant="outline" className="capitalize">
-                {profile.role}
-              </Badge>
-            </div>
-            <Separator />
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
-                Member since
-              </label>
-              <p className="text-sm">{formatDate(profile.created_at)}</p>
-            </div>
-            <Separator />
+            <dl className="divide-y">
+              {fields.map(({ icon: Icon, label, value }) => (
+                <div key={label} className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
+                  <dt className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Icon className="h-4 w-4" aria-hidden="true" />
+                    {label}
+                  </dt>
+                  <dd className="min-w-0 truncate text-right text-sm font-medium">{value}</dd>
+                </div>
+              ))}
+            </dl>
             <EmailRemindersToggle enabled={profile.email_reminders ?? true} />
-
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Property Memberships</CardTitle>
-            <CardDescription>Properties you are or were a member of</CardDescription>
+            <CardTitle>Home memberships</CardTitle>
+            <CardDescription>Homes you live in now or lived in before</CardDescription>
           </CardHeader>
           <CardContent>
             {allMemberships.length > 0 ? (
-              <div className="space-y-3">
+              <ul className="space-y-2">
                 {allMemberships.map((m) => {
                   const property = m.properties as unknown as { name: string; city: string; state: string } | null;
                   return (
-                    <div
+                    <li
                       key={m.id}
-                      className="flex items-center justify-between rounded-md border p-3"
+                      className="flex items-start justify-between gap-3 rounded-lg border p-3"
                     >
-                      <div>
-                        <p className="text-sm font-medium">{property?.name}</p>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">{property?.name}</p>
                         <p className="text-xs text-muted-foreground">
                           {property?.city}, {property?.state}
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="mt-1 text-xs text-muted-foreground">
                           Joined {formatDate(m.join_date)}
-                          {m.leave_date && ` · Left ${formatDate(m.leave_date)}`}
+                          {m.leave_date && `, left ${formatDate(m.leave_date)}`}
                         </p>
                       </div>
                       <Badge
-                        variant={m.status === "active" ? "secondary" : "outline"}
+                        variant={m.status === "active" ? "success" : "secondary"}
                         className="capitalize"
                       >
                         {m.status}
                       </Badge>
-                    </div>
+                    </li>
                   );
                 })}
-              </div>
+              </ul>
             ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                No property memberships yet.
-              </p>
+              <EmptyPanel
+                icon={Home}
+                title="No memberships yet"
+                description="Homes you join through an invite link appear here."
+              />
             )}
           </CardContent>
         </Card>

@@ -16,17 +16,20 @@ import { MetricCard } from "@/components/shared/metric-card";
 import { formatDate } from "@/lib/utils";
 import type { UserRole } from "@/lib/supabase/types";
 import { UserRoleChangeDialog } from "@/components/admin/user-role-change-dialog";
+import { PageHeading } from "@/components/layout/page-heading";
+import { EmptyPanel } from "@/components/shared/empty-panel";
+import type { BadgeProps } from "@/components/ui/badge";
 
-const roleBadgeVariant: Record<UserRole, "default" | "secondary" | "outline"> = {
-  admin: "default",
-  owner: "secondary",
-  tenant: "outline",
+const roleBadgeVariant: Record<UserRole, BadgeProps["variant"]> = {
+  admin: "info",
+  owner: "success",
+  tenant: "secondary",
 };
 
 const roleIcon: Record<UserRole, React.ReactNode> = {
-  admin: <Shield className="h-3 w-3" />,
-  owner: <Building2 className="h-3 w-3" />,
-  tenant: <User className="h-3 w-3" />,
+  admin: <Shield className="h-3 w-3" aria-hidden="true" />,
+  owner: <Building2 className="h-3 w-3" aria-hidden="true" />,
+  tenant: <User className="h-3 w-3" aria-hidden="true" />,
 };
 
 export default async function AdminUsersPage() {
@@ -49,34 +52,29 @@ export default async function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Users</h1>
-        <p className="text-muted-foreground">
-          Manage all platform users
-        </p>
-      </div>
+      <PageHeading title="Users" description="Manage all platform users" />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-3 gap-3 sm:gap-4">
         <MetricCard
           title="Admins"
           value={adminCount}
-          icon={<Shield className="h-4 w-4" />}
         />
         <MetricCard
           title="Owners"
           value={ownerCount}
-          icon={<Building2 className="h-4 w-4" />}
         />
         <MetricCard
           title="Tenants"
           value={tenantCount}
-          icon={<Users className="h-4 w-4" />}
         />
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>All Users ({allUsers.length})</CardTitle>
+          <CardTitle className="flex flex-wrap items-baseline gap-2">
+            All users
+            <span className="figure text-sm font-normal text-muted-foreground">{allUsers.length}</span>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {allUsers.length > 0 ? (
@@ -89,7 +87,7 @@ export default async function AdminUsersPage() {
                   <TableHead>Role</TableHead>
                   <TableHead>Plan</TableHead>
                   <TableHead>Joined</TableHead>
-                  <TableHead className="w-[60px]">Actions</TableHead>
+                  <TableHead className="w-16"><span className="sr-only">Actions</span></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -111,7 +109,7 @@ export default async function AdminUsersPage() {
                       {u.email}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={roleBadgeVariant[u.role as UserRole]} className="gap-1">
+                      <Badge variant={roleBadgeVariant[u.role as UserRole]} className="gap-1 capitalize">
                         {roleIcon[u.role as UserRole]}
                         {u.role}
                       </Badge>
@@ -125,7 +123,7 @@ export default async function AdminUsersPage() {
                         </span>
                       )}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
+                    <TableCell className="whitespace-nowrap text-muted-foreground">
                       {formatDate(u.created_at)}
                     </TableCell>
                     <TableCell>
@@ -143,9 +141,7 @@ export default async function AdminUsersPage() {
             </Table>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground text-center py-8">
-              No users found.
-            </p>
+            <EmptyPanel icon={Users} title="No users yet" description="People appear here once they sign up or claim an invite." />
           )}
         </CardContent>
       </Card>

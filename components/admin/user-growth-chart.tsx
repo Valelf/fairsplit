@@ -11,10 +11,18 @@ import {
   Legend,
 } from "recharts";
 import type { UserGrowthPoint } from "@/lib/queries/analytics";
+import { EmptyPanel } from "@/components/shared/empty-panel";
+import { Users } from "lucide-react";
 
 interface UserGrowthChartProps {
   data: UserGrowthPoint[];
 }
+
+const tick = {
+  fill: "hsl(var(--muted-foreground))",
+  fontSize: 12,
+  fontFamily: "var(--font-mono)",
+};
 
 export function UserGrowthChart({ data }: UserGrowthChartProps) {
   const chartData = data.map((d) => ({
@@ -25,43 +33,49 @@ export function UserGrowthChart({ data }: UserGrowthChartProps) {
 
   if (chartData.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[300px] text-sm text-muted-foreground">
-        No user data yet
-      </div>
+      <EmptyPanel
+        icon={Users}
+        title="No sign-ups yet"
+        description="Monthly owner and tenant sign-ups will chart here."
+        className="h-[260px] justify-center"
+      />
     );
   }
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={chartData}>
-        <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+    <ResponsiveContainer width="100%" height={260}>
+      <BarChart data={chartData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
         <XAxis
           dataKey="name"
-          className="text-xs"
-          tick={{ fill: "hsl(var(--muted-foreground))" }}
+          tick={tick}
+          tickLine={false}
+          axisLine={{ stroke: "hsl(var(--border))" }}
         />
-        <YAxis
-          className="text-xs"
-          tick={{ fill: "hsl(var(--muted-foreground))" }}
-        />
+        <YAxis tick={tick} tickLine={false} axisLine={false} allowDecimals={false} />
         <Tooltip
+          cursor={{ fill: "hsl(var(--muted))" }}
           contentStyle={{
-            backgroundColor: "hsl(var(--card))",
+            backgroundColor: "hsl(var(--popover))",
             borderColor: "hsl(var(--border))",
             borderRadius: "8px",
+            color: "hsl(var(--popover-foreground))",
+            fontFamily: "var(--font-sans)",
+            fontSize: 12,
           }}
+          labelStyle={{ color: "hsl(var(--popover-foreground))", fontWeight: 500 }}
+          itemStyle={{ fontFamily: "var(--font-mono)", color: "hsl(var(--popover-foreground))" }}
         />
-        <Legend />
-        <Bar
-          dataKey="Owners"
-          stackId="a"
-          fill="hsl(var(--primary))"
-          radius={[0, 0, 0, 0]}
+        <Legend
+          iconType="circle"
+          iconSize={8}
+          wrapperStyle={{ fontSize: 12, color: "hsl(var(--muted-foreground))" }}
         />
+        <Bar dataKey="Owners" stackId="a" fill="hsl(var(--primary))" />
         <Bar
           dataKey="Tenants"
           stackId="a"
-          fill="hsl(var(--chart-2, 200 70% 50%))"
+          fill="hsl(var(--info-soft-foreground))"
           radius={[4, 4, 0, 0]}
         />
       </BarChart>

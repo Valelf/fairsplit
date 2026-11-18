@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/table";
 import { Building2, MapPin } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { PageHeading } from "@/components/layout/page-heading";
+import { EmptyPanel } from "@/components/shared/empty-panel";
 
 const linkClass =
   "rounded-sm underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
@@ -49,16 +51,14 @@ export default async function AdminPropertiesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Properties</h1>
-        <p className="text-muted-foreground">All properties on the platform</p>
-      </div>
+      <PageHeading title="Properties" description="All properties on the platform" />
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Building2 className="h-5 w-5" />
-            All Properties ({allProperties.length})
+            <Building2 className="h-5 w-5 text-primary" aria-hidden="true" />
+            All properties
+            <span className="figure text-sm font-normal text-muted-foreground">{allProperties.length}</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -70,7 +70,7 @@ export default async function AdminPropertiesPage() {
                     <TableHead>Property</TableHead>
                     <TableHead>Owner</TableHead>
                     <TableHead>Tenants</TableHead>
-                    <TableHead>Bills</TableHead>
+                    <TableHead className="text-right">Bills</TableHead>
                     <TableHead>Last bill</TableHead>
                     <TableHead>Created</TableHead>
                   </TableRow>
@@ -92,7 +92,7 @@ export default async function AdminPropertiesPage() {
                             {property.name}
                           </Link>
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <MapPin className="h-3 w-3" />
+                            <MapPin className="h-3 w-3" aria-hidden="true" />
                             {property.city}, {property.state}
                           </div>
                         </TableCell>
@@ -107,12 +107,12 @@ export default async function AdminPropertiesPage() {
                           <p className="text-xs text-muted-foreground">{owner?.email}</p>
                         </TableCell>
                         <TableCell className="whitespace-nowrap text-sm">
-                          {c.active} active
+                          <span className="figure">{c.active}</span> active
                           <div className="text-xs text-muted-foreground">
-                            {c.invited} invited · {c.departed} departed
+                            <span className="figure">{c.invited}</span> invited, <span className="figure">{c.departed}</span> departed
                           </div>
                         </TableCell>
-                        <TableCell>{lb?.count ?? 0}</TableCell>
+                        <TableCell className="figure text-right">{lb?.count ?? 0}</TableCell>
                         <TableCell className="whitespace-nowrap text-sm">
                           {lb ? (
                             <>
@@ -131,7 +131,7 @@ export default async function AdminPropertiesPage() {
               </Table>
             </div>
           ) : (
-            <p className="py-8 text-center text-sm text-muted-foreground">No properties found.</p>
+            <EmptyPanel icon={Building2} title="No properties yet" description="Properties appear here as soon as an owner adds one." />
           )}
         </CardContent>
       </Card>
