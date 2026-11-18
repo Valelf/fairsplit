@@ -2,18 +2,19 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import { MetricCard } from "@/components/shared/metric-card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import {
-  ArrowLeft,
   Users,
-  Receipt,
   DollarSign,
   Calendar,
   Plus,
   MapPin,
+  ChevronRight,
 } from "lucide-react";
+import { PageHeading } from "@/components/layout/page-heading";
+import { CycleStatePill } from "@/components/shared/cycle-state-pill";
+import { EmptyPanel } from "@/components/shared/empty-panel";
 import { formatCents, formatDate, formatDateRange } from "@/lib/utils";
 import Link from "next/link";
 import { PropertySettings } from "@/components/owner/property-settings";
@@ -76,27 +77,24 @@ export default async function PropertyOverviewPage({ params }: PageProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href="/dashboard/owner/properties">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold tracking-tight">
-            {property.name}
-          </h1>
-          <p className="text-muted-foreground flex items-center gap-1">
-            <MapPin className="h-3 w-3" />
-            {property.address_line1}
-            {property.address_line2 ? `, ${property.address_line2}` : ""},{" "}
-            {property.city}, {property.state} {property.zip_code}
-          </p>
-        </div>
-        <PropertySettings property={property} />
-      </div>
+      <PageHeading
+        backHref="/dashboard/owner/properties"
+        backLabel="Properties"
+        title={property.name}
+        description={
+          <span className="flex items-start gap-1.5">
+            <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 sm:mt-1" aria-hidden="true" />
+            <span>
+              {property.address_line1}
+              {property.address_line2 ? `, ${property.address_line2}` : ""},{" "}
+              {property.city}, {property.state} {property.zip_code}
+            </span>
+          </span>
+        }
+        actions={<PropertySettings property={property} />}
+      />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <MetricCard
           title="Active Tenants"
           value={activeTenants.length}
@@ -127,126 +125,124 @@ export default async function PropertyOverviewPage({ params }: PageProps) {
       />
 
       <Tabs defaultValue="tenants" className="space-y-4">
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-2 sm:inline-flex sm:w-auto">
           <TabsTrigger value="tenants">Tenants</TabsTrigger>
           <TabsTrigger value="cycles">Cycles</TabsTrigger>
         </TabsList>
 
         <TabsContent value="tenants" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Tenants</h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-display text-lg font-semibold">Tenants</h2>
             <Button asChild size="sm">
               <Link
                 href={`/dashboard/owner/properties/${property.id}/tenants/invite`}
               >
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
                 Add Tenant
               </Link>
             </Button>
           </div>
 
           {allTenants.length > 0 ? (
-            <div className="space-y-2">
+            <ul className="divide-y rounded-lg border bg-card">
               {allTenants.map((tenant) => (
-                <div
+                <li
                   key={tenant.id}
-                  className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex items-start gap-3 p-3 sm:items-center sm:px-4"
                 >
-                  <div className="flex min-w-0 items-center gap-3">
+                  <span
+                    aria-hidden="true"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground"
+                  >
+                    {tenant.display_name.trim().charAt(0).toUpperCase() || "?"}
+                  </span>
+                  <div className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                     <div className="min-w-0">
-                      <p className="font-medium">{tenant.display_name}</p>
+                      <p className="truncate font-medium">{tenant.display_name}</p>
                       <p className="truncate text-sm text-muted-foreground">
                         {tenant.email}
                       </p>
                     </div>
+                    <div className="flex flex-wrap items-center gap-2 sm:shrink-0 sm:gap-3">
+                      <span className="text-xs text-muted-foreground sm:text-sm">
+                        {formatDate(tenant.join_date)}
+                        {tenant.leave_date
+                          ? ` – ${formatDate(tenant.leave_date)}`
+                          : " – present"}
+                      </span>
+                      <Badge
+                        className="capitalize"
+                        variant={
+                          tenant.status === "active"
+                            ? "success"
+                            : tenant.status === "departed"
+                              ? "secondary"
+                              : "outline"
+                        }
+                      >
+                        {tenant.status}
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
-                    <span className="text-sm text-muted-foreground">
-                      {formatDate(tenant.join_date)}
-                      {tenant.leave_date
-                        ? ` – ${formatDate(tenant.leave_date)}`
-                        : " – present"}
-                    </span>
-                    <Badge
-                      variant={
-                        tenant.status === "active"
-                          ? "default"
-                          : tenant.status === "departed"
-                            ? "secondary"
-                            : "outline"
-                      }
-                    >
-                      {tenant.status}
-                    </Badge>
+                  <div className="shrink-0">
                     <TenantRowActions tenant={tenant} />
                   </div>
-                </div>
+                </li>
               ))}
-            </div>
+            </ul>
           ) : (
-            <Card>
-              <CardContent className="flex flex-col items-center py-8">
-                <Users className="h-8 w-8 text-muted-foreground" />
-                <p className="mt-2 text-sm text-muted-foreground">
-                  No tenants yet. Add your first tenant to get started.
-                </p>
-              </CardContent>
-            </Card>
+            <EmptyPanel
+              icon={Users}
+              title="No tenants yet"
+              description="Add your first tenant to get started."
+            />
           )}
         </TabsContent>
 
         <TabsContent value="cycles" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Billing Cycles</h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-display text-lg font-semibold">Billing Cycles</h2>
             <Button asChild size="sm">
               <Link
                 href={`/dashboard/owner/properties/${property.id}/cycles/new`}
               >
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
                 New Cycle
               </Link>
             </Button>
           </div>
 
           {cycles && cycles.length > 0 ? (
-            <div className="space-y-2">
+            <ul className="divide-y rounded-lg border bg-card">
               {cycles.map((cycle) => (
-                <Link
-                  key={cycle.id}
-                  href={`/dashboard/owner/properties/${property.id}/cycles/${cycle.id}`}
-                  className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent transition-colors"
-                >
-                  <div>
-                    <p className="font-medium">{cycle.label}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {cycle.start_date && cycle.end_date
-                        ? formatDateRange(cycle.start_date, cycle.end_date)
-                        : `Created ${formatDate(cycle.created_at)}`}
-                    </p>
-                  </div>
-                  <Badge
-                    variant={
-                      cycle.status === "closed"
-                        ? "secondary"
-                        : cycle.status === "open"
-                          ? "default"
-                          : "outline"
-                    }
+                <li key={cycle.id}>
+                  <Link
+                    href={`/dashboard/owner/properties/${property.id}/cycles/${cycle.id}`}
+                    className="group flex items-center gap-3 p-3 transition-colors first:rounded-t-lg last:rounded-b-lg hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:px-4"
                   >
-                    {cycle.status}
-                  </Badge>
-                </Link>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium">{cycle.label}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {cycle.start_date && cycle.end_date
+                          ? formatDateRange(cycle.start_date, cycle.end_date)
+                          : `Created ${formatDate(cycle.created_at)}`}
+                      </p>
+                    </div>
+                    <CycleStatePill status={cycle.status} />
+                    <ChevronRight
+                      className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+                      aria-hidden="true"
+                    />
+                  </Link>
+                </li>
               ))}
-            </div>
+            </ul>
           ) : (
-            <Card>
-              <CardContent className="flex flex-col items-center py-8">
-                <Calendar className="h-8 w-8 text-muted-foreground" />
-                <p className="mt-2 text-sm text-muted-foreground">
-                  No billing cycles yet. Create one to start adding bills.
-                </p>
-              </CardContent>
-            </Card>
+            <EmptyPanel
+              icon={Calendar}
+              title="No billing cycles yet"
+              description="Create one to start adding bills."
+            />
           )}
         </TabsContent>
       </Tabs>
