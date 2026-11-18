@@ -13,7 +13,8 @@
     "db:backup": "tsx scripts/db/backup.ts",
     "db:rebuild": "tsx scripts/db/rebuild.ts",
     "db:security-check": "tsx scripts/db/security-check.ts",
-    "seed:pilot": "tsx scripts/seed-pilot.ts"
+    "seed:pilot": "tsx scripts/seed-pilot.ts",
+    "db:migrate": "tsx scripts/db/migrate.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.74.0",
