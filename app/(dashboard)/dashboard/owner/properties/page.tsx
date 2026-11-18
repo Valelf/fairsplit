@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Building2, Plus, MapPin, Users } from "lucide-react";
+import { Building2, Plus, MapPin, Eye, EyeOff, ChevronRight } from "lucide-react";
+import { PageHeading } from "@/components/layout/page-heading";
+import { EmptyPanel } from "@/components/shared/empty-panel";
 import Link from "next/link";
 
 export default async function OwnerPropertiesPage() {
@@ -21,75 +22,75 @@ export default async function OwnerPropertiesPage() {
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
+  const addButton = (
+    <Button asChild>
+      <Link href="/dashboard/owner/properties/new">
+        <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+        Add Property
+      </Link>
+    </Button>
+  );
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Properties</h1>
-          <p className="text-muted-foreground">
-            Manage your rental properties
-          </p>
-        </div>
-        <Button asChild>
-          <Link href="/dashboard/owner/properties/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Property
-          </Link>
-        </Button>
-      </div>
+      <PageHeading
+        title="Properties"
+        description="Manage your rental properties"
+        actions={properties && properties.length > 0 ? addButton : undefined}
+      />
 
       {properties && properties.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <ul className="grid gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
           {properties.map((property) => (
-            <Link
-              key={property.id}
-              href={`/dashboard/owner/properties/${property.id}/overview`}
-            >
-              <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                <CardContent className="pt-6">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <h3 className="font-semibold">{property.name}</h3>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <MapPin className="h-3 w-3" />
-                        <span>
-                          {property.city}, {property.state} {property.zip_code}
-                        </span>
-                      </div>
-                    </div>
-                    <Building2 className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Users className="h-3 w-3" />
-                      <span>
-                        {property.transparency_level === "full"
-                          ? "Full transparency"
-                          : "Own share only"}
+            <li key={property.id}>
+              <Link
+                href={`/dashboard/owner/properties/${property.id}/overview`}
+                className="group flex h-full flex-col rounded-xl border bg-card p-4 text-card-foreground shadow-sm transition-all hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:p-5"
+              >
+                <div className="flex items-start gap-3">
+                  <span
+                    aria-hidden="true"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
+                  >
+                    <Building2 className="h-5 w-5" />
+                  </span>
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <h2 className="truncate font-display text-base font-semibold">{property.name}</h2>
+                    <p className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />
+                      <span className="truncate">
+                        {property.city}, {property.state} {property.zip_code}
                       </span>
-                    </div>
+                    </p>
                   </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      ) : (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Building2 className="h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-semibold">No properties yet</h3>
-            <p className="mt-2 text-sm text-muted-foreground text-center">
-              Add your first property to start managing bills and tenants.
-            </p>
-            <Button asChild className="mt-4">
-              <Link href="/dashboard/owner/properties/new">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Property
+                  <ChevronRight
+                    className="mt-1 h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+                    aria-hidden="true"
+                  />
+                </div>
+                <div className="mt-4 flex items-center gap-1.5 border-t pt-3 text-xs text-muted-foreground">
+                  {property.transparency_level === "full" ? (
+                    <Eye className="h-3.5 w-3.5" aria-hidden="true" />
+                  ) : (
+                    <EyeOff className="h-3.5 w-3.5" aria-hidden="true" />
+                  )}
+                  <span>
+                    {property.transparency_level === "full"
+                      ? "Full transparency"
+                      : "Own share only"}
+                  </span>
+                </div>
               </Link>
-            </Button>
-          </CardContent>
-        </Card>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <EmptyPanel
+          icon={Building2}
+          title="No properties yet"
+          description="Add your first property to start managing bills and tenants."
+          action={addButton}
+        />
       )}
     </div>
   );
