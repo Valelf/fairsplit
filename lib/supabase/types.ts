@@ -379,6 +379,18 @@ export interface Database {
         Args: Record<string, never>;
         Returns: string;
       };
+      recalculate_bill_splits: {
+        Args: { p_bill_id: string };
+        Returns: number;
+      };
+      recalculate_property_splits: {
+        Args: { p_property_id: string; p_from?: string | null };
+        Returns: number;
+      };
+      can_manage_property_splits: {
+        Args: { p_property_id: string };
+        Returns: boolean;
+      };
     };
     Enums: {
       [_ in never]: never;

@@ -73,13 +73,7 @@ export async function createBill(input: CreateBillInput) {
   }
 
   // Calculate and store splits
-  const splitError = await calculateAndStoreSplits(
-    bill.id,
-    parsed.data.property_id,
-    parsed.data.amount_cents,
-    parsed.data.service_start,
-    parsed.data.service_end
-  );
+  const splitError = await calculateAndStoreSplits(bill.id);
 
   if (splitError) {
     return { error: splitError };

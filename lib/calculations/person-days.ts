@@ -9,6 +9,8 @@
  * 4. Each tenant's exact share = bill_amount_cents * (tenant_person_days / total_person_days)
  * 5. Floor every share to whole cents, then hand the leftover cents one at a time to the
  *    tenants with the largest fractional remainders (ties: more person-days, then input order).
+ *    Callers pass tenants sorted by sortTenantPeriods (join_date, then id) so the order matches
+ *    the database function public.recalculate_bill_splits.
  *    This guarantees the shares sum to the bill exactly (largest-remainder method).
  */
 
@@ -101,9 +103,11 @@ function allocate(
     return rows.map(({ index: _index, ...r }) => ({ ...r, amountCents: 0 }));
   }
   const withShares = rows.map((r) => {
-    const exact = (amountCents * r.personDays) / total;
-    const floor = Math.floor(exact);
-    return { ...r, floor, remainder: exact - floor };
+    // Integer arithmetic (same as the SQL recalculate_bill_splits): remainder is the numerator
+    // over `total`, so ties compare exactly instead of via floating-point fractions.
+    const numerator = amountCents * r.personDays;
+    const floor = Math.floor(numerator / total);
+    return { ...r, floor, remainder: numerator - floor * total };
   });
   let leftover = amountCents - withShares.reduce((sum, r) => sum + r.floor, 0);
   const order = [...withShares]
@@ -145,4 +149,11 @@ export function calculateCycleSplits(
   }
 
   return results;
+}
+
+/** Stable tenant order shared with the SQL recalculation: join date, then id. */
+export function sortTenantPeriods<T extends TenantPeriod>(tenants: T[]): T[] {
+  return [...tenants].sort((a, b) =>
+    a.joinDate < b.joinDate ? -1 : a.joinDate > b.joinDate ? 1 : a.tenantId < b.tenantId ? -1 : a.tenantId > b.tenantId ? 1 : 0
+  );
 }
