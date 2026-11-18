@@ -80,7 +80,7 @@ export function PaySharePanel({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-4 pt-2 sm:grid-cols-3">
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-4 pt-5 sm:grid-cols-3">
           <div className="col-span-2 sm:col-span-1">
             <dt className="text-sm text-muted-foreground">Amount due</dt>
             <dd className="figure text-4xl font-medium leading-tight tracking-tight">{formatCents(owedCents)}</dd>

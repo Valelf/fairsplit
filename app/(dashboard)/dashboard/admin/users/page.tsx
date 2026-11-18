@@ -58,17 +58,14 @@ export default async function AdminUsersPage() {
         <MetricCard
           title="Admins"
           value={adminCount}
-          icon={<Shield className="h-4 w-4" />}
         />
         <MetricCard
           title="Owners"
           value={ownerCount}
-          icon={<Building2 className="h-4 w-4" />}
         />
         <MetricCard
           title="Tenants"
           value={tenantCount}
-          icon={<Users className="h-4 w-4" />}
         />
       </div>
 
