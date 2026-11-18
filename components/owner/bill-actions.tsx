@@ -24,18 +24,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { BILL_CATEGORY_OPTIONS } from "@/lib/utilities/categories";
 
 type EditableBill = Pick<
   Bill,
   "id" | "category" | "provider" | "amount_cents" | "service_start" | "service_end" | "notes"
 >;
 
-const CATEGORIES: { value: BillCategory; label: string }[] = [
-  { value: "electricity", label: "Electricity" },
-  { value: "internet", label: "Internet" },
-  { value: "water", label: "Water" },
-  { value: "other", label: "Other" },
-];
+const CATEGORIES: { value: BillCategory; label: string }[] = BILL_CATEGORY_OPTIONS;
 
 /** Edit / delete menu for one bill on the owner cycle page. Hidden when the cycle is closed. */
 export function BillActions({ bill }: { bill: EditableBill }) {

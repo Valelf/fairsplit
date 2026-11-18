@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
+import { BILL_CATEGORY_VALUES } from "@/lib/utilities/categories";
 import { createNotification } from "@/lib/server/notifications";
 import { calculateAndStoreSplits, recalculateBillSplits } from "@/lib/server/splits";
 import { revalidatePropertyPages } from "@/lib/server/revalidate";
@@ -9,7 +10,7 @@ import { revalidatePropertyPages } from "@/lib/server/revalidate";
 const createBillSchema = z.object({
   cycle_id: z.string().uuid(),
   property_id: z.string().uuid(),
-  category: z.enum(["internet", "electricity", "water", "other"]),
+  category: z.enum(BILL_CATEGORY_VALUES),
   provider: z.string().min(1, "Provider name is required"),
   amount_cents: z.number().int().positive("Amount must be positive"),
   service_start: z.string().min(1, "Service start date is required"),
@@ -17,6 +18,7 @@ const createBillSchema = z.object({
   source: z.enum(["manual", "pdf_parsed"]).default("manual"),
   pdf_storage_path: z.string().optional(),
   notes: z.string().optional(),
+  utility_account_id: z.string().uuid().optional().nullable(),
 });
 
 export type CreateBillInput = z.infer<typeof createBillSchema>;
@@ -49,6 +51,20 @@ export async function createBill(input: CreateBillInput) {
     return { error: "Property not found or access denied" };
   }
 
+  // A linked utility account must belong to the same property
+  if (parsed.data.utility_account_id) {
+    const { data: account } = await supabase
+      .from("utility_accounts")
+      .select("id")
+      .eq("id", parsed.data.utility_account_id)
+      .eq("property_id", parsed.data.property_id)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (!account) {
+      return { error: "Utility account not found for this property" };
+    }
+  }
+
   // Create the bill
   const { data: bill, error: billError } = await supabase
     .from("bills")
@@ -63,6 +79,7 @@ export async function createBill(input: CreateBillInput) {
       source: parsed.data.source,
       notes: parsed.data.notes || null,
       pdf_storage_path: parsed.data.pdf_storage_path || null,
+      utility_account_id: parsed.data.utility_account_id || null,
       created_by: user.id,
     })
     .select()
@@ -181,7 +198,7 @@ async function loadOwnedBill(billId: string) {
 
 const updateBillSchema = z
   .object({
-    category: z.enum(["internet", "electricity", "water", "other"]),
+    category: z.enum(BILL_CATEGORY_VALUES),
     provider: z.string().trim().min(1, "Provider name is required").max(120),
     amount_cents: z.number().int().positive("Amount must be positive").max(100_000_000),
     service_start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use a valid start date"),

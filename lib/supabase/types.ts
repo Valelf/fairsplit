@@ -1,7 +1,7 @@
 export type UserRole = "admin" | "owner" | "tenant";
 export type CycleStatus = "draft" | "open" | "closed";
 export type TenantStatus = "invited" | "active" | "departed";
-export type BillCategory = "internet" | "electricity" | "water" | "other";
+export type BillCategory = "internet" | "electricity" | "water" | "gas" | "trash" | "other";
 export type BillSource = "manual" | "pdf_parsed";
 export type FlagStatus = "open" | "under_review" | "resolved" | "dismissed";
 export type TransparencyLevel = "full" | "own_share";
@@ -114,6 +114,23 @@ export type Bill = {
   created_by: string;
   created_at: string;
   updated_at: string;
+  /** Utility account this bill belongs to (Phase 2). */
+  utility_account_id?: string | null;
+};
+
+export type UtilityAccount = {
+  id: string;
+  property_id: string;
+  category: BillCategory;
+  provider: string;
+  /** Only ever the last 4 characters of the account number. */
+  account_number_last4: string | null;
+  typical_amount_cents: number | null;
+  billing_day: number | null;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
 };
 
 export type BillSplit = {
@@ -415,6 +432,22 @@ export interface Database {
           Pick<CycleNotification, "kind" | "recipient_email">;
         Update: Partial<Omit<CycleNotification, "id" | "created_at">>;
         Relationships: [];
+      };
+      utility_accounts: {
+        Row: UtilityAccount;
+        Insert: Omit<UtilityAccount, "id" | "created_at" | "updated_at" | "deleted_at" | "active"> & {
+          active?: boolean;
+        };
+        Update: Partial<Omit<UtilityAccount, "id" | "property_id" | "created_at">>;
+        Relationships: [
+          {
+            foreignKeyName: "utility_accounts_property_id_fkey";
+            columns: ["property_id"];
+            isOneToOne: false;
+            referencedRelation: "properties";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       owner_payment_methods: {
         Row: OwnerPaymentMethods;

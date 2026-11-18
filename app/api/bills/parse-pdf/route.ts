@@ -2,6 +2,40 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/utils/rate-limit";
 import Anthropic from "@anthropic-ai/sdk";
+import { z } from "zod";
+import { BILL_CATEGORY_VALUES } from "@/lib/utilities/categories";
+
+const MAX_PDF_BYTES = 10 * 1024 * 1024;
+
+const requestSchema = z.object({
+  property_id: z.string().uuid("Invalid property"),
+  file: z
+    .instanceof(File, { message: "PDF file required" })
+    .refine((f) => f.type === "application/pdf", "PDF file required")
+    .refine((f) => f.size > 0, "PDF file required")
+    .refine((f) => f.size <= MAX_PDF_BYTES, "File too large (max 10MB)"),
+});
+
+const confidenceLevel = z.enum(["high", "medium", "low"]).catch("low");
+
+/** Shape returned to the client; anything the model gets wrong becomes null / "low". */
+const parsedBillSchema = z.object({
+  category: z.enum(BILL_CATEGORY_VALUES).nullable().catch(null),
+  provider: z.string().trim().min(1).max(120).nullable().catch(null),
+  amount: z.number().positive().max(1_000_000).nullable().catch(null),
+  service_start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().catch(null),
+  service_end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().catch(null),
+  confidence: z
+    .object({
+      category: confidenceLevel,
+      provider: confidenceLevel,
+      amount: confidenceLevel,
+      service_start: confidenceLevel,
+      service_end: confidenceLevel,
+    })
+    .partial()
+    .catch({}),
+});
 
 export const runtime = "nodejs";
 
@@ -29,8 +63,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  // Rate limit
-  const rateCheck = checkRateLimit(user.id);
+  // Rate limit (in-memory, per user)
+  const rateCheck = checkRateLimit(`parse-pdf:${user.id}`);
   if (!rateCheck.allowed) {
     return NextResponse.json(
       {
@@ -41,21 +75,32 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const formData = await request.formData();
-  const file = formData.get("file") as File | null;
-
-  if (!file || file.type !== "application/pdf") {
-    return NextResponse.json(
-      { error: "PDF file required" },
-      { status: 400 }
-    );
+  let formData: FormData;
+  try {
+    formData = await request.formData();
+  } catch {
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
-  if (file.size > 10 * 1024 * 1024) {
-    return NextResponse.json(
-      { error: "File too large (max 10MB)" },
-      { status: 400 }
-    );
+  const input = requestSchema.safeParse({
+    property_id: formData.get("property_id"),
+    file: formData.get("file"),
+  });
+  if (!input.success) {
+    return NextResponse.json({ error: input.error.issues[0].message }, { status: 400 });
+  }
+  const { file, property_id } = input.data;
+
+  // Only the owner of the property may parse bills for it
+  const { data: property } = await supabase
+    .from("properties")
+    .select("id")
+    .eq("id", property_id)
+    .eq("owner_id", user.id)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (!property) {
+    return NextResponse.json({ error: "Property not found or access denied" }, { status: 403 });
   }
 
   try {
@@ -86,7 +131,7 @@ export async function POST(request: NextRequest) {
               text: `Extract the following information from this utility bill PDF. Return ONLY a JSON object with these fields:
 
 {
-  "category": "internet" | "electricity" | "water" | "other",
+  "category": "internet" | "electricity" | "water" | "gas" | "trash" | "other",
   "provider": "string (company name)",
   "amount": number (total amount due in dollars, e.g. 95.49),
   "service_start": "YYYY-MM-DD",
@@ -101,7 +146,7 @@ export async function POST(request: NextRequest) {
 }
 
 Rules:
-- For category, map: cable/fiber/broadband -> "internet", electric/power -> "electricity", water/sewer -> "water", everything else -> "other"
+- For category, map: cable/fiber/broadband -> "internet", electric/power -> "electricity", water/sewer -> "water", natural gas -> "gas", trash/garbage/waste/recycling -> "trash", everything else -> "other"
 - Use "high" confidence when clearly stated, "medium" when inferred, "low" when guessing
 - If a field cannot be determined, use null for the value and "low" for confidence
 - Return ONLY the JSON, no other text`,
@@ -121,7 +166,7 @@ Rules:
     }
 
     // Try to parse the JSON from the response
-    let parsed;
+    let parsed: unknown;
     try {
       // Handle cases where the response might have markdown code blocks
       let jsonStr = textContent.text.trim();
@@ -136,15 +181,17 @@ Rules:
       );
     }
 
+    const cleaned = parsedBillSchema.safeParse(parsed);
+    if (!cleaned.success) {
+      return NextResponse.json({ error: "Failed to parse AI response" }, { status: 500 });
+    }
+
     return NextResponse.json({
-      data: parsed,
+      data: cleaned.data,
       fallback: false,
     });
-  } catch (err: any) {
+  } catch (err) {
     console.error("PDF parsing error:", err);
-    return NextResponse.json(
-      { error: err.message || "Failed to parse PDF" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to parse PDF" }, { status: 500 });
   }
 }

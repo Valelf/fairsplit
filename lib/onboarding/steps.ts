@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { BILL_CATEGORY_VALUES } from "@/lib/utilities/categories";
 
 /** Pure helpers for the landlord onboarding wizard (no server or browser APIs). */
 
@@ -133,7 +134,7 @@ export const tenantSchema = z.object({
 });
 export type TenantInput = z.input<typeof tenantSchema>;
 
-export const BILL_CATEGORIES = ["electricity", "water", "internet", "other"] as const;
+export const BILL_CATEGORIES = BILL_CATEGORY_VALUES;
 
 export const firstBillSchema = z
   .object({
