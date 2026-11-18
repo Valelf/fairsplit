@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Building2, Home, Shield, User } from "lucide-react";
+import { Building2, Home, Shield, User } from "lucide-react";
 import { requireAdminPage } from "@/lib/server/admin-guard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,9 @@ import { AuditLogTable, type AuditPerson } from "@/components/admin/audit-log-ta
 import { formatCents, formatDate } from "@/lib/utils";
 import { todayUTC } from "@/lib/admin/comp";
 import type { AuditLogEntry, TenantStatus, UserRole } from "@/lib/supabase/types";
+import type { BadgeProps } from "@/components/ui/badge";
+import { PageHeading } from "@/components/layout/page-heading";
+import { EmptyPanel } from "@/components/shared/empty-panel";
 
 interface PageProps {
   params: { userId: string };
@@ -27,15 +30,21 @@ interface PageProps {
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const roleIcon: Record<UserRole, React.ReactNode> = {
-  admin: <Shield className="h-3 w-3" />,
-  owner: <Building2 className="h-3 w-3" />,
-  tenant: <User className="h-3 w-3" />,
+  admin: <Shield className="h-3 w-3" aria-hidden="true" />,
+  owner: <Building2 className="h-3 w-3" aria-hidden="true" />,
+  tenant: <User className="h-3 w-3" aria-hidden="true" />,
 };
 
-const tenantStatusVariant: Record<TenantStatus, "default" | "secondary" | "outline"> = {
-  active: "default",
-  invited: "secondary",
-  departed: "outline",
+const tenantStatusVariant: Record<TenantStatus, BadgeProps["variant"]> = {
+  active: "success",
+  invited: "info",
+  departed: "secondary",
+};
+
+const roleVariant: Record<UserRole, BadgeProps["variant"]> = {
+  admin: "info",
+  owner: "success",
+  tenant: "secondary",
 };
 
 export default async function AdminUserDetailPage({ params }: PageProps) {
@@ -108,22 +117,18 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <Link
-          href="/dashboard/admin/users"
-          className="inline-flex items-center gap-1 rounded-sm text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <ArrowLeft className="h-4 w-4" /> All users
-        </Link>
-        <div className="mt-2 flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-bold tracking-tight">{profile.full_name || profile.email}</h1>
-          <Badge variant={role === "admin" ? "default" : role === "owner" ? "secondary" : "outline"} className="gap-1">
+      <PageHeading
+        backHref="/dashboard/admin/users"
+        backLabel="All users"
+        title={<span className="break-words">{profile.full_name || profile.email}</span>}
+        badges={
+          <Badge variant={roleVariant[role]} className="gap-1 capitalize">
             {roleIcon[role]}
             {role}
           </Badge>
-        </div>
-        <p className="text-muted-foreground">{profile.email}</p>
-      </div>
+        }
+        description={<span className="break-all">{profile.email}</span>}
+      />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
@@ -137,13 +142,17 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
               <dt className="text-muted-foreground">Email</dt>
               <dd className="break-all">{profile.email}</dd>
               <dt className="text-muted-foreground">Joined</dt>
-              <dd>{formatDate(profile.created_at)}</dd>
+              <dd className="figure">{formatDate(profile.created_at)}</dd>
               <dt className="text-muted-foreground">Onboarding</dt>
-              <dd>{profile.onboarding_completed ? "Completed" : "Not completed"}</dd>
+              <dd>
+                <Badge variant={profile.onboarding_completed ? "success" : "warning"}>
+                  {profile.onboarding_completed ? "Completed" : "Not completed"}
+                </Badge>
+              </dd>
               <dt className="text-muted-foreground">User ID</dt>
               <dd className="break-all font-mono text-xs">{profile.id}</dd>
             </dl>
-            <div className="mt-4 flex items-center gap-3">
+            <div className="mt-4 flex flex-wrap items-center gap-3">
               <UserRoleChangeDialog
                 userId={profile.id}
                 userName={profile.full_name || profile.email}
@@ -171,17 +180,19 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
                   return (
                     <>
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-lg font-semibold">{plan?.name ?? "Unknown plan"}</span>
-                        <span className="text-sm text-muted-foreground">
-                          {plan ? `${formatCents(plan.price_cents)}/month list price` : null}
-                        </span>
+                        <span className="font-display text-lg font-semibold">{plan?.name ?? "Unknown plan"}</span>
+                        {plan ? (
+                          <span className="text-sm text-muted-foreground">
+                            <span className="figure">{formatCents(plan.price_cents)}</span>/month list price
+                          </span>
+                        ) : null}
                       </div>
                       <CompStatusBadge planName={plan?.name ?? "Plan"} compUntil={activeSub.comp_until} today={today} />
                       <dl className="grid grid-cols-[max-content_1fr] gap-x-6 gap-y-2 text-sm">
                         <dt className="text-muted-foreground">Status</dt>
-                        <dd>{activeSub.status}</dd>
+                        <dd className="capitalize">{activeSub.status}</dd>
                         <dt className="text-muted-foreground">Started</dt>
-                        <dd>{formatDate(activeSub.current_period_start ?? activeSub.created_at)}</dd>
+                        <dd className="figure">{formatDate(activeSub.current_period_start ?? activeSub.created_at)}</dd>
                         <dt className="text-muted-foreground">Note</dt>
                         <dd>{activeSub.comp_note || "—"}</dd>
                       </dl>
@@ -197,7 +208,7 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
               </>
             ) : (
               <>
-                <p className="text-sm text-muted-foreground">No active subscription.</p>
+                <p className="rounded-lg border border-dashed px-3 py-4 text-sm text-muted-foreground">No active subscription.</p>
                 {role === "owner" ? (
                   <CompPlanDialog mode="grant" userId={profile.id} plans={plans || []} defaultPlanId={proPlanId} />
                 ) : (
@@ -207,7 +218,7 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
             )}
             {otherSubs.length > 0 && (
               <p className="text-xs text-muted-foreground">
-                {otherSubs.length} past subscription{otherSubs.length === 1 ? "" : "s"} (
+                <span className="figure">{otherSubs.length}</span> past subscription{otherSubs.length === 1 ? "" : "s"} (
                 {otherSubs.map((s) => s.status).join(", ")})
               </p>
             )}
@@ -219,7 +230,8 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" /> Properties owned ({(ownedProperties || []).length})
+              <Building2 className="h-5 w-5 text-primary" aria-hidden="true" /> Properties owned
+              <span className="figure text-sm font-normal text-muted-foreground">{(ownedProperties || []).length}</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -230,7 +242,7 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
                     <TableRow>
                       <TableHead>Property</TableHead>
                       <TableHead>Location</TableHead>
-                      <TableHead>Active tenants</TableHead>
+                      <TableHead className="text-right">Active tenants</TableHead>
                       <TableHead>Created</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -245,7 +257,7 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
                             {p.name}
                           </Link>
                           {p.deleted_at && (
-                            <Badge variant="outline" className="ml-2">
+                            <Badge variant="danger" className="ml-2">
                               Deleted
                             </Badge>
                           )}
@@ -253,15 +265,15 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
                         <TableCell className="text-muted-foreground">
                           {p.city}, {p.state}
                         </TableCell>
-                        <TableCell>{activeByProperty[p.id] || 0}</TableCell>
-                        <TableCell className="text-muted-foreground">{formatDate(p.created_at)}</TableCell>
+                        <TableCell className="figure text-right">{activeByProperty[p.id] || 0}</TableCell>
+                        <TableCell className="whitespace-nowrap text-muted-foreground">{formatDate(p.created_at)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
               </div>
             ) : (
-              <p className="py-4 text-sm text-muted-foreground">No properties yet.</p>
+              <EmptyPanel icon={Building2} title="No properties yet" description="Properties this owner adds will list here." />
             )}
           </CardContent>
         </Card>
@@ -270,7 +282,8 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Home className="h-5 w-5" /> Tenancies ({(memberships || []).length})
+            <Home className="h-5 w-5 text-primary" aria-hidden="true" /> Tenancies
+            <span className="figure text-sm font-normal text-muted-foreground">{(memberships || []).length}</span>
           </CardTitle>
           <CardDescription>Properties this person lives in or was invited to (matched by account or email)</CardDescription>
         </CardHeader>
@@ -301,12 +314,12 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
                           <div className="text-xs text-muted-foreground">as {m.display_name}</div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={tenantStatusVariant[m.status as TenantStatus]}>{m.status}</Badge>
+                          <Badge variant={tenantStatusVariant[m.status as TenantStatus]} className="capitalize">{m.status}</Badge>
                         </TableCell>
-                        <TableCell className="text-muted-foreground">
+                        <TableCell className="whitespace-nowrap text-muted-foreground">
                           {formatDate(m.join_date)} – {m.leave_date ? formatDate(m.leave_date) : "now"}
                         </TableCell>
-                        <TableCell className="text-muted-foreground">
+                        <TableCell className="whitespace-nowrap text-muted-foreground">
                           {m.claimed_at ? formatDate(m.claimed_at) : "Not yet"}
                         </TableCell>
                       </TableRow>
@@ -316,7 +329,7 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
               </Table>
             </div>
           ) : (
-            <p className="py-4 text-sm text-muted-foreground">No tenancies.</p>
+            <EmptyPanel icon={Home} title="No tenancies" description="This person has not been invited to any property." />
           )}
         </CardContent>
       </Card>

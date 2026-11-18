@@ -7,7 +7,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
+import { EmptyPanel } from "@/components/shared/empty-panel";
+import { ScrollText } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import type { AuditLogEntry } from "@/lib/supabase/types";
 import { auditActionLabel, auditSubjectUserId, describeAuditEntry } from "@/lib/admin/audit-format";
@@ -22,14 +24,14 @@ interface AuditLogTableProps {
   showSubject?: boolean;
 }
 
-const actionColors: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
-  change_role: "default",
-  grant_plan: "secondary",
-  extend_comp: "secondary",
-  end_comp: "destructive",
-  create: "secondary",
-  update: "outline",
-  delete: "destructive",
+const actionColors: Record<string, BadgeProps["variant"]> = {
+  change_role: "info",
+  grant_plan: "success",
+  extend_comp: "success",
+  end_comp: "warning",
+  create: "success",
+  update: "secondary",
+  delete: "danger",
 };
 
 function PersonLink({ id, people }: { id: string | null; people?: Record<string, AuditPerson> }) {
@@ -64,7 +66,7 @@ export function AuditLogTable({
   showSubject = true,
 }: AuditLogTableProps) {
   if (entries.length === 0) {
-    return <p className="py-8 text-center text-sm text-muted-foreground">{emptyMessage}</p>;
+    return <EmptyPanel icon={ScrollText} title={emptyMessage} />;
   }
 
   return (
@@ -88,19 +90,19 @@ export function AuditLogTable({
                   <div className="text-sm">
                     {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true })}
                   </div>
-                  <div className="text-xs text-muted-foreground">{formatTimestamp(entry.created_at)}</div>
+                  <div className="figure text-xs text-muted-foreground">{formatTimestamp(entry.created_at)}</div>
                 </TableCell>
                 <TableCell>
                   <PersonLink id={entry.user_id} people={people} />
                 </TableCell>
                 <TableCell>
                   <Badge variant={actionColors[entry.action] || "outline"}>{auditActionLabel(entry.action)}</Badge>
-                  <div className="mt-1 text-xs text-muted-foreground">{entry.table_name}</div>
+                  <div className="mt-1 font-mono text-xs text-muted-foreground">{entry.table_name}</div>
                 </TableCell>
                 {showSubject && (
                   <TableCell>{subject ? <PersonLink id={subject} people={people} /> : "—"}</TableCell>
                 )}
-                <TableCell className="max-w-md text-sm">{describeAuditEntry(entry)}</TableCell>
+                <TableCell className="min-w-[14rem] max-w-md text-sm">{describeAuditEntry(entry)}</TableCell>
               </TableRow>
             );
           })}
