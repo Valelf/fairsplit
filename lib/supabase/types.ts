@@ -6,6 +6,19 @@ export type BillSource = "manual" | "pdf_parsed";
 export type FlagStatus = "open" | "under_review" | "resolved" | "dismissed";
 export type TransparencyLevel = "full" | "own_share";
 export type SubscriptionStatus = "active" | "canceled" | "past_due";
+export type PaymentStatus = "owed" | "marked_paid" | "confirmed";
+
+export type OwnerPaymentMethods = {
+  owner_id: string;
+  payee_name: string | null;
+  venmo_handle: string | null;
+  cashapp_handle: string | null;
+  zelle_contact: string | null;
+  paypal_me: string | null;
+  instructions: string | null;
+  created_at: string;
+  updated_at: string;
+};
 
 export type Profile = {
   id: string;
@@ -53,6 +66,7 @@ export type PropertyTenant = {
 };
 
 export type BillingCycle = {
+  due_date?: string | null;
   start_date?: string | null;
   end_date?: string | null;
   id: string;
@@ -89,6 +103,11 @@ export type BillSplit = {
   person_days: number;
   total_person_days: number;
   amount_cents: number;
+  payment_status?: PaymentStatus;
+  marked_paid_at?: string | null;
+  confirmed_at?: string | null;
+  confirmed_by?: string | null;
+  payment_note?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -357,6 +376,20 @@ export interface Database {
           }
         ];
       };
+      owner_payment_methods: {
+        Row: OwnerPaymentMethods;
+        Insert: Omit<OwnerPaymentMethods, "created_at" | "updated_at">;
+        Update: Partial<Omit<OwnerPaymentMethods, "owner_id" | "created_at">>;
+        Relationships: [
+          {
+            foreignKeyName: "owner_payment_methods_owner_id_fkey";
+            columns: ["owner_id"];
+            isOneToOne: true;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -378,6 +411,26 @@ export interface Database {
       ping: {
         Args: Record<string, never>;
         Returns: string;
+      };
+      mark_cycle_paid: {
+        Args: { p_cycle_id: string; p_note?: string | null };
+        Returns: number;
+      };
+      unmark_cycle_paid: {
+        Args: { p_cycle_id: string };
+        Returns: number;
+      };
+      confirm_tenant_cycle_payment: {
+        Args: { p_cycle_id: string; p_property_tenant_id: string };
+        Returns: number;
+      };
+      reopen_tenant_cycle_payment: {
+        Args: { p_cycle_id: string; p_property_tenant_id: string };
+        Returns: number;
+      };
+      is_tenant_of_owner: {
+        Args: { p_owner_id: string };
+        Returns: boolean;
       };
     };
     Enums: {
