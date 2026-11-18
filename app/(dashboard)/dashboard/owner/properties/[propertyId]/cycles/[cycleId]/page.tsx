@@ -152,10 +152,10 @@ export default async function CycleDetailPage({ params }: PageProps) {
                   <CardContent className="flex h-full flex-col gap-2 p-4">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        <p className="text-sm font-medium capitalize">
                           {bill.category}
                         </p>
-                        <p className="truncate text-sm font-medium">{bill.provider}</p>
+                        <p className="truncate text-sm text-muted-foreground">{bill.provider}</p>
                       </div>
                       {cycle.status !== "closed" && (
                         <BillActions
