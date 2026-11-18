@@ -63,8 +63,8 @@ export function PaySharePanel({
   if (totalCents === 0) return null;
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="overflow-hidden border-primary/30">
+      <CardHeader className="bg-accent/40">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
             <CardTitle className="flex items-center gap-2">
@@ -80,21 +80,21 @@ export function PaySharePanel({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div>
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-4 pt-2 sm:grid-cols-3">
+          <div className="col-span-2 sm:col-span-1">
             <dt className="text-sm text-muted-foreground">Amount due</dt>
-            <dd className="text-3xl font-bold">{formatCents(owedCents)}</dd>
+            <dd className="figure text-4xl font-medium leading-tight tracking-tight">{formatCents(owedCents)}</dd>
           </div>
           {markedPaidCents > 0 && (
             <div>
               <dt className="text-sm text-muted-foreground">Awaiting confirmation</dt>
-              <dd className="text-xl font-semibold">{formatCents(markedPaidCents)}</dd>
+              <dd className="figure text-xl font-medium text-info-soft-foreground">{formatCents(markedPaidCents)}</dd>
             </div>
           )}
           {confirmedCents > 0 && (
             <div>
               <dt className="text-sm text-muted-foreground">Confirmed paid</dt>
-              <dd className="text-xl font-semibold">{formatCents(confirmedCents)}</dd>
+              <dd className="figure text-xl font-medium text-success">{formatCents(confirmedCents)}</dd>
             </div>
           )}
         </dl>
@@ -125,18 +125,18 @@ export function PaySharePanel({
                 ) : (
                   <CheckCircle2 className="mr-2 h-4 w-4" aria-hidden="true" />
                 )}
-                I&apos;ve paid {formatCents(owedCents)}
+                I&apos;ve paid <span className="figure">{formatCents(owedCents)}</span>
               </Button>
             </form>
           </>
         )}
 
         {owedCents === 0 && markedPaidCents > 0 && (
-          <div className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 rounded-lg bg-info-soft p-3 text-info-soft-foreground sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm">
               You marked this paid{markedPaidAt ? ` on ${formatDate(markedPaidAt)}` : ""}. Your
               landlord will confirm once they see it.
-              {lastNote && <span className="block text-muted-foreground">Note: {lastNote}</span>}
+              {lastNote && <span className="mt-1 block opacity-90">Note: {lastNote}</span>}
             </p>
             <Button
               type="button"
@@ -156,7 +156,8 @@ export function PaySharePanel({
         )}
 
         {owedCents === 0 && markedPaidCents === 0 && (
-          <p className="text-sm text-muted-foreground">
+          <p className="flex items-center gap-2 rounded-lg bg-success-soft p-3 text-sm text-success-soft-foreground">
+            <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
             All settled. Your landlord confirmed your payment.
           </p>
         )}

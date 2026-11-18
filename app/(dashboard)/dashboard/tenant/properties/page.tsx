@@ -1,7 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
-import { Building2, MapPin } from "lucide-react";
+import { Building2, ChevronRight, MapPin } from "lucide-react";
+import { PageHeading } from "@/components/layout/page-heading";
+import { EmptyPanel } from "@/components/shared/empty-panel";
 import Link from "next/link";
 
 export default async function TenantPropertiesPage() {
@@ -26,50 +28,46 @@ export default async function TenantPropertiesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">My Properties</h1>
-        <p className="text-muted-foreground">
-          Properties you are a tenant in
-        </p>
-      </div>
+      <PageHeading
+        title="My homes"
+        description="Places you rent a room in. Open one for its bills."
+      />
 
       {properties.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <ul className="grid gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
           {properties.map((property: any) => (
-            <Link
-              key={property.id}
-              href={`/dashboard/tenant/properties/${property.id}/bills`}
-            >
-              <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                <CardContent className="pt-6">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <h3 className="font-semibold">{property.name}</h3>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <MapPin className="h-3 w-3" />
-                        <span>
+            <li key={property.id}>
+              <Link
+                href={`/dashboard/tenant/properties/${property.id}/bills`}
+                className="group block rounded-xl"
+              >
+                <Card className="h-full transition-colors group-hover:border-primary/40 group-hover:bg-accent/40">
+                  <CardContent className="flex items-start justify-between gap-3 p-4 sm:p-5">
+                    <div className="min-w-0 space-y-1">
+                      <h2 className="truncate text-lg font-semibold">{property.name}</h2>
+                      <p className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                        <span className="truncate">
                           {property.city}, {property.state}
                         </span>
-                      </div>
+                      </p>
                     </div>
-                    <Building2 className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
+                    <ChevronRight
+                      className="mt-1 h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+                      aria-hidden="true"
+                    />
+                  </CardContent>
+                </Card>
+              </Link>
+            </li>
           ))}
-        </div>
+        </ul>
       ) : (
-        <Card>
-          <CardContent className="flex flex-col items-center py-12">
-            <Building2 className="h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-semibold">No properties yet</h3>
-            <p className="mt-2 text-sm text-muted-foreground text-center">
-              You haven&apos;t been added to any properties. Ask your landlord to
-              send you an invite.
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyPanel
+          icon={Building2}
+          title="No homes yet"
+          description="Ask your landlord to send you an invite link. Your bills show up here once you join."
+        />
       )}
     </div>
   );

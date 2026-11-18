@@ -1,8 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeading } from "@/components/layout/page-heading";
+import { CycleStatePill } from "@/components/shared/cycle-state-pill";
+import { MetricCard } from "@/components/shared/metric-card";
+import { EmptyPanel } from "@/components/shared/empty-panel";
 import {
   Table,
   TableBody,
@@ -11,9 +13,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, DollarSign, Calendar, AlertTriangle } from "lucide-react";
+import { AlertTriangle, Receipt } from "lucide-react";
 import { formatCents, formatDateRange } from "@/lib/utils";
-import Link from "next/link";
 import { BillFlagForm } from "@/components/tenant/bill-flag-form";
 import { FlagStatusBadge } from "@/components/tenant/flag-status-badge";
 import { DownloadInvoiceButton } from "@/components/shared/download-invoice-button";
@@ -136,60 +137,29 @@ export default async function TenantCycleDetailPage({ params }: PageProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link
-            href={`/dashboard/tenant/properties/${params.propertyId}/bills`}
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight">{cycle.label}</h1>
-            <Badge
-              variant={
-                cycle.status === "closed"
-                  ? "secondary"
-                  : cycle.status === "open"
-                    ? "default"
-                    : "outline"
-              }
-            >
-              {cycle.status}
-            </Badge>
-          </div>
-          <p className="text-muted-foreground">{property.name}</p>
-        </div>
-        {cycle.status !== "draft" && (
-          <DownloadInvoiceButton cycleId={cycle.id} />
-        )}
-      </div>
+      <PageHeading
+        backHref={`/dashboard/tenant/properties/${params.propertyId}/bills`}
+        backLabel="All bills"
+        title={cycle.label}
+        badges={<CycleStatePill status={cycle.status} />}
+        description={property.name}
+        actions={
+          cycle.status !== "draft" ? <DownloadInvoiceButton cycleId={cycle.id} /> : undefined
+        }
+      />
 
-      {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Your Share</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{formatCents(myTotalCents)}</div>
-            <p className="text-xs text-muted-foreground">
-              of {formatCents(totalBilledCents)} total
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Bills</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{bills?.length || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              utilities in this cycle
-            </p>
-          </CardContent>
-        </Card>
+      {/* Summary */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
+        <MetricCard
+          title="Your share"
+          value={formatCents(myTotalCents)}
+          description={`of ${formatCents(totalBilledCents)} billed`}
+        />
+        <MetricCard
+          title="Bills"
+          value={bills?.length || 0}
+          description="utilities this cycle"
+        />
       </div>
 
       {cycle.status !== "draft" && (
@@ -212,70 +182,105 @@ export default async function TenantCycleDetailPage({ params }: PageProps) {
       {/* My Bill Breakdown (always shown) */}
       <Card>
         <CardHeader>
-          <CardTitle>Your Bill Breakdown</CardTitle>
+          <CardTitle>Your breakdown</CardTitle>
+          <CardDescription>Each bill is split by the days you lived here.</CardDescription>
         </CardHeader>
         <CardContent>
           {bills && bills.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Provider</TableHead>
-                  <TableHead>Service Period</TableHead>
-                  <TableHead className="text-right">Total Bill</TableHead>
-                  <TableHead className="text-right">Days</TableHead>
-                  <TableHead className="text-right">Your Share</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              {/* Phone: one statement line per bill */}
+              <ul className="divide-y sm:hidden">
                 {bills.map((bill) => {
                   const mySplit = mySplitsMap.get(bill.id);
                   return (
-                    <TableRow key={bill.id}>
-                      <TableCell className="capitalize font-medium">
-                        {bill.category}
-                      </TableCell>
-                      <TableCell>{bill.provider}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {formatDateRange(bill.service_start, bill.service_end)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCents(bill.amount_cents)}
-                      </TableCell>
-                      <TableCell className="text-right text-muted-foreground">
-                        {mySplit ? (
-                          <>
-                            {mySplit.person_days} / {mySplit.total_person_days}
-                          </>
-                        ) : (
-                          "—"
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right font-medium">
+                    <li key={bill.id} className="flex items-start justify-between gap-3 py-3">
+                      <div className="min-w-0">
+                        <p className="font-medium capitalize">{bill.category}</p>
+                        <p className="truncate text-sm text-muted-foreground">{bill.provider}</p>
+                        <p className="figure text-xs text-muted-foreground">
+                          {mySplit
+                            ? `${mySplit.person_days} of ${mySplit.total_person_days} days`
+                            : "No days"}
+                          {" · "}
+                          {formatCents(bill.amount_cents)} bill
+                        </p>
+                      </div>
+                      <p className="figure shrink-0 text-base font-medium">
                         {formatCents(mySplit?.amount_cents || 0)}
-                      </TableCell>
-                    </TableRow>
+                      </p>
+                    </li>
                   );
                 })}
-                <TableRow className="border-t-2 font-bold">
-                  <TableCell colSpan={3}>Total</TableCell>
-                  <TableCell className="text-right">
-                    {formatCents(totalBilledCents)}
-                  </TableCell>
-                  <TableCell />
-                  <TableCell className="text-right">
-                    {formatCents(myTotalCents)}
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
+                <li className="flex items-center justify-between gap-3 pt-3">
+                  <span className="font-medium">Your total</span>
+                  <span className="figure text-lg font-medium">{formatCents(myTotalCents)}</span>
+                </li>
+              </ul>
+
+              {/* Tablet and up: full table */}
+              <div className="hidden sm:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Provider</TableHead>
+                      <TableHead className="hidden md:table-cell">Service period</TableHead>
+                      <TableHead className="text-right">Bill</TableHead>
+                      <TableHead className="text-right">Days</TableHead>
+                      <TableHead className="text-right">Your share</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {bills.map((bill) => {
+                      const mySplit = mySplitsMap.get(bill.id);
+                      return (
+                        <TableRow key={bill.id}>
+                          <TableCell className="capitalize font-medium">
+                            {bill.category}
+                          </TableCell>
+                          <TableCell>{bill.provider}</TableCell>
+                          <TableCell className="hidden text-muted-foreground md:table-cell">
+                            {formatDateRange(bill.service_start, bill.service_end)}
+                          </TableCell>
+                          <TableCell className="figure text-right">
+                            {formatCents(bill.amount_cents)}
+                          </TableCell>
+                          <TableCell className="figure text-right text-muted-foreground">
+                            {mySplit ? (
+                              <>
+                                {mySplit.person_days} / {mySplit.total_person_days}
+                              </>
+                            ) : (
+                              "—"
+                            )}
+                          </TableCell>
+                          <TableCell className="figure text-right font-medium">
+                            {formatCents(mySplit?.amount_cents || 0)}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    <TableRow className="border-t-2 font-medium hover:bg-transparent">
+                      <TableCell colSpan={2} className="md:hidden">Total</TableCell>
+                      <TableCell colSpan={3} className="hidden md:table-cell">Total</TableCell>
+                      <TableCell className="figure text-right">
+                        {formatCents(totalBilledCents)}
+                      </TableCell>
+                      <TableCell />
+                      <TableCell className="figure text-right">
+                        {formatCents(myTotalCents)}
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           ) : (
-            <div className="text-center py-6">
-              <DollarSign className="mx-auto h-8 w-8 text-muted-foreground" />
-              <p className="mt-2 text-sm text-muted-foreground">
-                No bills in this cycle yet.
-              </p>
-            </div>
+            <EmptyPanel
+              icon={Receipt}
+              title="No bills in this cycle yet"
+              description="Your landlord hasn't added bills for this period. Check back once they do."
+            />
           )}
         </CardContent>
       </Card>
@@ -287,32 +292,33 @@ export default async function TenantCycleDetailPage({ params }: PageProps) {
         bills.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Full Household Breakdown</CardTitle>
+              <CardTitle>Household breakdown</CardTitle>
+              <CardDescription>Everyone&apos;s share of each bill, by days lived here.</CardDescription>
             </CardHeader>
             <CardContent className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="sticky left-0 bg-card z-10 min-w-[120px]">
+                    <TableHead className="sticky left-0 bg-card z-10 min-w-[7.5rem]">
                       Tenant
                     </TableHead>
                     {bills.map((bill) => (
                       <TableHead
                         key={bill.id}
-                        className="text-center min-w-[140px]"
+                        className="text-right min-w-[8.5rem]"
                       >
-                        <div className="capitalize font-medium">
+                        <div className="capitalize font-medium text-foreground">
                           {bill.category}
                         </div>
                         <div className="text-xs font-normal text-muted-foreground">
                           {bill.provider}
                         </div>
-                        <div className="text-xs font-normal text-muted-foreground">
+                        <div className="figure text-xs font-normal text-muted-foreground">
                           {formatCents(bill.amount_cents)}
                         </div>
                       </TableHead>
                     ))}
-                    <TableHead className="text-center min-w-[100px] font-bold">
+                    <TableHead className="text-right min-w-[6rem]">
                       Total
                     </TableHead>
                   </TableRow>
@@ -326,9 +332,11 @@ export default async function TenantCycleDetailPage({ params }: PageProps) {
                     return (
                       <TableRow
                         key={tenantId}
-                        className={isMe ? "bg-accent/50" : ""}
+                        className={isMe ? "bg-accent/60 hover:bg-accent/60" : ""}
                       >
-                        <TableCell className="sticky left-0 bg-card z-10 font-medium">
+                        <TableCell
+                          className={`sticky left-0 z-10 font-medium ${isMe ? "bg-accent" : "bg-card"}`}
+                        >
                           {tenant?.display_name || "Unknown"}
                           {isMe && (
                             <span className="ml-2 text-xs text-muted-foreground">
@@ -342,33 +350,32 @@ export default async function TenantCycleDetailPage({ params }: PageProps) {
                           rowTotal += amount;
 
                           return (
-                            <TableCell key={bill.id} className="text-center">
-                              <div>{formatCents(amount)}</div>
+                            <TableCell key={bill.id} className="text-right">
+                              <div className="figure">{formatCents(amount)}</div>
                               {split && split.person_days > 0 && (
-                                <div className="text-xs text-muted-foreground">
-                                  {split.person_days}d / {split.total_person_days}
-                                  d
+                                <div className="figure text-xs text-muted-foreground">
+                                  {split.person_days}d / {split.total_person_days}d
                                 </div>
                               )}
                             </TableCell>
                           );
                         })}
-                        <TableCell className="text-center font-bold">
+                        <TableCell className="figure text-right font-medium">
                           {formatCents(rowTotal)}
                         </TableCell>
                       </TableRow>
                     );
                   })}
-                  <TableRow className="border-t-2 font-bold">
+                  <TableRow className="border-t-2 font-medium hover:bg-transparent">
                     <TableCell className="sticky left-0 bg-card z-10">
                       Total
                     </TableCell>
                     {bills.map((bill) => (
-                      <TableCell key={bill.id} className="text-center">
+                      <TableCell key={bill.id} className="figure text-right">
                         {formatCents(bill.amount_cents)}
                       </TableCell>
                     ))}
-                    <TableCell className="text-center">
+                    <TableCell className="figure text-right">
                       {formatCents(totalBilledCents)}
                     </TableCell>
                   </TableRow>
@@ -383,33 +390,32 @@ export default async function TenantCycleDetailPage({ params }: PageProps) {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5" />
+              <AlertTriangle className="h-5 w-5 text-warning-soft-foreground" aria-hidden="true" />
               See an issue?
             </CardTitle>
+            <CardDescription>
+              Flag a bill if something looks wrong. Your landlord is notified and can review it.
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Flag a bill if something looks incorrect. The property owner will
-              be notified and can review your flag.
-            </p>
-            <div className="space-y-2">
+            <ul className="space-y-2">
               {bills.map((bill) => {
                 const existingFlag = myFlags?.find(
                   (f) => f.bill_id === bill.id
                 );
                 return (
-                  <div
+                  <li
                     key={bill.id}
-                    className="flex items-center justify-between rounded-lg border px-3 py-2"
+                    className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
                   >
-                    <div>
-                      <span className="text-sm font-medium capitalize">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium capitalize">
                         {bill.category}
-                      </span>
-                      <span className="text-sm text-muted-foreground">
-                        {" "}
-                        - {bill.provider} ({formatCents(bill.amount_cents)})
-                      </span>
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {bill.provider}{" "}
+                        <span className="figure">{formatCents(bill.amount_cents)}</span>
+                      </p>
                     </div>
                     {existingFlag ? (
                       <FlagStatusBadge status={existingFlag.status as any} />
@@ -421,10 +427,10 @@ export default async function TenantCycleDetailPage({ params }: PageProps) {
                         billAmountCents={bill.amount_cents}
                       />
                     )}
-                  </div>
+                  </li>
                 );
               })}
-            </div>
+            </ul>
           </CardContent>
         </Card>
       )}

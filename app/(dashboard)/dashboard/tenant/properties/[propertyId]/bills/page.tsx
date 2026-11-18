@@ -1,9 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Receipt } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { ChevronRight, Receipt } from "lucide-react";
+import { PageHeading } from "@/components/layout/page-heading";
+import { CycleStatePill } from "@/components/shared/cycle-state-pill";
+import { EmptyPanel } from "@/components/shared/empty-panel";
 import { formatCents } from "@/lib/utils";
 import Link from "next/link";
 
@@ -62,75 +63,62 @@ export default async function TenantBillsPage({ params }: PageProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href="/dashboard/tenant/dashboard">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            {property.name}
-          </h1>
-          <p className="text-muted-foreground">
-            Your bill breakdown by cycle
-          </p>
-        </div>
-      </div>
+      <PageHeading
+        backHref="/dashboard/tenant/properties"
+        backLabel="My homes"
+        title={property.name}
+        description="Your share of each billing cycle."
+      />
 
       {cycles && cycles.length > 0 ? (
-        <div className="space-y-4">
+        <ul className="space-y-2 sm:space-y-3">
           {cycles.map((cycle) => {
             const cycleData = splitsByCycle.get(cycle.id);
             const myTotal = cycleData?.total || 0;
+            const billCount = cycleData?.bills.length || 0;
 
             return (
-              <Link
-                key={cycle.id}
-                href={`/dashboard/tenant/properties/${params.propertyId}/bills/${cycle.id}`}
-              >
-                <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                  <CardContent className="flex items-center justify-between pt-6">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold">{cycle.label}</p>
-                        <Badge
-                          variant={
-                            cycle.status === "closed"
-                              ? "secondary"
-                              : "default"
-                          }
-                        >
-                          {cycle.status}
-                        </Badge>
+              <li key={cycle.id}>
+                <Link
+                  href={`/dashboard/tenant/properties/${params.propertyId}/bills/${cycle.id}`}
+                  className="group block rounded-xl"
+                >
+                  <Card className="transition-colors group-hover:border-primary/40 group-hover:bg-accent/40">
+                    <CardContent className="flex items-center justify-between gap-3 p-4 sm:p-5">
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h2 className="font-display text-base font-semibold sm:text-lg">{cycle.label}</h2>
+                          <CycleStatePill status={cycle.status} />
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          <span className="figure">{billCount}</span> {billCount === 1 ? "bill" : "bills"}
+                        </p>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {cycleData?.bills.length || 0} bills
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-lg font-bold">
-                        {formatCents(myTotal)}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Your share
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <div className="text-right">
+                          <p className="figure text-lg font-medium sm:text-xl">
+                            {formatCents(myTotal)}
+                          </p>
+                          <p className="text-xs text-muted-foreground">Your share</p>
+                        </div>
+                        <ChevronRight
+                          className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+                          aria-hidden="true"
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              </li>
             );
           })}
-        </div>
+        </ul>
       ) : (
-        <Card>
-          <CardContent className="flex flex-col items-center py-12">
-            <Receipt className="h-8 w-8 text-muted-foreground" />
-            <p className="mt-2 text-sm text-muted-foreground">
-              No billing cycles yet. Your landlord will add bills soon.
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyPanel
+          icon={Receipt}
+          title="No billing cycles yet"
+          description="Your landlord hasn't added bills here yet. Each cycle appears once they do."
+        />
       )}
     </div>
   );

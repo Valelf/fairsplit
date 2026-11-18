@@ -1,13 +1,13 @@
-import { Badge } from "@/components/ui/badge";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
 import type { FlagStatus } from "@/lib/supabase/types";
 
 const statusConfig: Record<
   FlagStatus,
-  { label: string; variant: "default" | "secondary" | "outline" | "destructive" }
+  { label: string; variant: BadgeProps["variant"] }
 > = {
-  open: { label: "Open", variant: "destructive" },
-  under_review: { label: "Under Review", variant: "default" },
-  resolved: { label: "Resolved", variant: "secondary" },
+  open: { label: "Open", variant: "danger" },
+  under_review: { label: "Under review", variant: "warning" },
+  resolved: { label: "Resolved", variant: "success" },
   dismissed: { label: "Dismissed", variant: "outline" },
 };
 

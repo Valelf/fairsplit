@@ -2,7 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { MetricCard } from "@/components/shared/metric-card";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, DollarSign, Receipt } from "lucide-react";
+import { Building2, ChevronRight, DollarSign, Receipt } from "lucide-react";
+import { PageHeading } from "@/components/layout/page-heading";
+import { EmptyPanel } from "@/components/shared/empty-panel";
 import { formatCents } from "@/lib/utils";
 import { summarizeSplits } from "@/lib/payments";
 import Link from "next/link";
@@ -51,20 +53,15 @@ export default async function TenantDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Your billing overview across all properties
-        </p>
-      </div>
+      <PageHeading
+        title="Dashboard"
+        description="What you owe and what you've paid, across your homes."
+      />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3">
         <MetricCard
-          title="Properties"
-          value={properties.length}
-          icon={<Building2 className="h-4 w-4" />}
-        />
-        <MetricCard
+          className="col-span-2 md:col-span-1"
+          tone={balance.owedCents > 0 ? "attention" : balance.totalCents > 0 ? "positive" : "default"}
           title="Outstanding"
           value={formatCents(balance.owedCents)}
           description={
@@ -77,7 +74,12 @@ export default async function TenantDashboardPage() {
           icon={<DollarSign className="h-4 w-4" />}
         />
         <MetricCard
-          title="Billing Cycles"
+          title="Properties"
+          value={properties.length}
+          icon={<Building2 className="h-4 w-4" />}
+        />
+        <MetricCard
+          title="Billing cycles"
           value={cycleCount || 0}
           icon={<Receipt className="h-4 w-4" />}
         />
@@ -86,7 +88,7 @@ export default async function TenantDashboardPage() {
       {spendingTrend.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Your Spending Trend</CardTitle>
+            <CardTitle>Your spending trend</CardTitle>
             <CardDescription>Monthly utility costs across all properties</CardDescription>
           </CardHeader>
           <CardContent>
@@ -97,36 +99,34 @@ export default async function TenantDashboardPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Your Properties</CardTitle>
-          <CardDescription>Properties you are a tenant in</CardDescription>
+          <CardTitle>Your homes</CardTitle>
+          <CardDescription>Open one to see its bills and your share.</CardDescription>
         </CardHeader>
         <CardContent>
           {properties.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {properties.map((property: any) => (
                 <Link
                   key={property.id}
                   href={`/dashboard/tenant/properties/${property.id}/bills`}
-                  className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent transition-colors"
+                  className="flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors hover:bg-accent"
                 >
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-medium">{property.name}</p>
                     <p className="text-sm text-muted-foreground">
                       {property.city}, {property.state}
                     </p>
                   </div>
-                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                 </Link>
               ))}
             </div>
           ) : (
-            <div className="text-center py-6">
-              <Building2 className="mx-auto h-8 w-8 text-muted-foreground" />
-              <p className="mt-2 text-sm text-muted-foreground">
-                You haven&apos;t been added to any properties yet. Ask your landlord
-                to send you an invite.
-              </p>
-            </div>
+            <EmptyPanel
+              icon={Building2}
+              title="No homes yet"
+              description="Ask your landlord to send you an invite link. Your bills show up here once you join."
+            />
           )}
         </CardContent>
       </Card>
