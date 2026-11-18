@@ -40,19 +40,6 @@ const parsedBillSchema = z.object({
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
-  // Check for API key upfront
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return NextResponse.json(
-      {
-        error: "PDF parsing not configured",
-        fallback: true,
-        message:
-          "ANTHROPIC_API_KEY is not configured. Please enter bill details manually.",
-      },
-      { status: 200 }
-    );
-  }
-
   const supabase = createClient();
 
   const {
@@ -101,6 +88,19 @@ export async function POST(request: NextRequest) {
     .maybeSingle();
   if (!property) {
     return NextResponse.json({ error: "Property not found or access denied" }, { status: 403 });
+  }
+
+  // Only after auth + ownership: tell owners when AI parsing is not configured
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return NextResponse.json(
+      {
+        error: "PDF parsing not configured",
+        fallback: true,
+        message:
+          "ANTHROPIC_API_KEY is not configured. Please enter bill details manually.",
+      },
+      { status: 200 }
+    );
   }
 
   try {
