@@ -298,12 +298,15 @@ export async function updateBill(billId: string, input: UpdateBillInput) {
     .eq("id", bill.id);
   if (error) return { error: error.message };
 
-  if (exclusions) {
-    const exclusionError = await replaceExclusions(supabase, bill.id, exclusions);
-    if (exclusionError) return { error: `Bill saved, but who is excluded couldn't be updated: ${exclusionError}` };
-  }
+  const exclusionError = exclusions ? await replaceExclusions(supabase, bill.id, exclusions) : null;
 
+  // Always re-split once the bill row has changed, even if the exclusions failed to save,
+  // so stored shares never disagree with the bill's amount/dates/method.
   const splitError = await recalculateBillSplits(bill.id);
+  if (exclusionError) {
+    revalidatePropertyPages(bill.property_id);
+    return { error: `Bill saved, but who is excluded couldn't be updated: ${exclusionError}` };
+  }
   if (splitError) return { error: `Bill saved, but re-splitting failed: ${splitError}` };
 
   revalidatePropertyPages(bill.property_id);
