@@ -53,7 +53,7 @@ export default function HowItWorksPage() {
     >
       <div className={proseClass}>
         <section aria-labelledby="rule">
-          <h2 id="rule">The rule</h2>
+          <h2 id="rule" className="!mt-0">The rule</h2>
           <p>
             A bill covers a service period, say October 14 to November 12. For every tenant, FairSplit
             counts the days in that period they lived in the house. Add those up and you get the

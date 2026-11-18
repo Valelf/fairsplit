@@ -46,7 +46,7 @@ export default function PrivacyPage() {
     >
       <div className={proseClass}>
         <section aria-labelledby="who">
-          <h2 id="who">Who we are</h2>
+          <h2 id="who" className="!mt-0">Who we are</h2>
           <p>
             FairSplit is operated by FairSplit (operator details to be added), referred to here as
             &ldquo;we&rdquo; or &ldquo;us&rdquo;. FairSplit is a tool landlords use to divide shared

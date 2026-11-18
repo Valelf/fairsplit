@@ -36,7 +36,7 @@ export default function TermsPage() {
     >
       <div className={proseClass}>
         <section aria-labelledby="agreement">
-          <h2 id="agreement">The agreement</h2>
+          <h2 id="agreement" className="!mt-0">The agreement</h2>
           <p>
             These terms are an agreement between you and FairSplit (operator details to be added)
             (&ldquo;FairSplit&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;). By creating an account or

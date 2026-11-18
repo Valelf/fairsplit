@@ -111,7 +111,7 @@ export default function LeaseAddendumPage() {
     >
       <div className={proseClass}>
         <section aria-labelledby="using">
-          <h2 id="using">Using this template</h2>
+          <h2 id="using" className="!mt-0">Using this template</h2>
           <ul>
             <li>
               Replace everything in <strong>[square brackets]</strong>, and delete options that

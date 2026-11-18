@@ -31,8 +31,7 @@ export const proseClass = cn(
   "[&_ul]:mt-4 [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-5 [&_ul]:text-muted-foreground",
   "[&_ol]:mt-4 [&_ol]:list-decimal [&_ol]:space-y-2 [&_ol]:pl-5 [&_ol]:text-muted-foreground",
   "[&_li]:pl-1 [&_strong]:font-semibold [&_strong]:text-foreground",
-  "[&_a]:rounded-sm [&_a]:font-medium [&_a]:text-primary [&_a]:underline [&_a]:decoration-primary/30 [&_a]:underline-offset-4 hover:[&_a]:decoration-primary",
-  "[&>section:first-child>h2]:mt-0"
+  "[&_a]:rounded-sm [&_a]:font-medium [&_a]:text-primary [&_a]:underline [&_a]:decoration-primary/30 [&_a]:underline-offset-4 hover:[&_a]:decoration-primary"
 );
 
 /** Template for public long-form pages: header, title block, optional contents rail, footer. */
@@ -75,7 +74,9 @@ export function ContentPage({ title, lede, meta, notice, toc, children }: Conten
               </div>
             </nav>
           )}
-          <div className={toc && toc.length > 0 ? "lg:col-span-9" : "lg:col-span-12"}>{children}</div>
+          <div className={cn("min-w-0", toc && toc.length > 0 ? "lg:col-span-9" : "lg:col-span-12")}>
+            {children}
+          </div>
         </div>
       </main>
       <SiteFooter />
