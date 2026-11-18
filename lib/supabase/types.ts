@@ -167,6 +167,32 @@ export type BillFlag = {
   updated_at: string;
 };
 
+export type BillQuestionStatus = "open" | "answered" | "resolved";
+
+export type BillQuestion = {
+  id: string;
+  bill_id: string;
+  property_id: string;
+  tenant_id: string;
+  asked_by: string;
+  status: BillQuestionStatus;
+  resolution_note: string | null;
+  corrected_amount_cents: number | null;
+  resolved_by: string | null;
+  resolved_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type BillQuestionMessage = {
+  id: string;
+  question_id: string;
+  property_id: string;
+  author_id: string;
+  body: string;
+  created_at: string;
+};
+
 export type Notification = {
   id: string;
   user_id: string;
@@ -369,6 +395,54 @@ export interface Database {
             columns: ["tenant_id"];
             isOneToOne: false;
             referencedRelation: "property_tenants";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      bill_questions: {
+        Row: BillQuestion;
+        Insert: Omit<
+          BillQuestion,
+          "id" | "created_at" | "updated_at" | "status" | "resolution_note" | "corrected_amount_cents" | "resolved_by" | "resolved_at"
+        > &
+          Partial<Pick<BillQuestion, "status">>;
+        Update: Partial<
+          Pick<BillQuestion, "status" | "resolution_note" | "corrected_amount_cents" | "resolved_by" | "resolved_at">
+        >;
+        Relationships: [
+          {
+            foreignKeyName: "bill_questions_bill_id_fkey";
+            columns: ["bill_id"];
+            isOneToOne: false;
+            referencedRelation: "bills";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bill_questions_property_id_fkey";
+            columns: ["property_id"];
+            isOneToOne: false;
+            referencedRelation: "properties";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bill_questions_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "property_tenants";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      bill_question_messages: {
+        Row: BillQuestionMessage;
+        Insert: Omit<BillQuestionMessage, "id" | "created_at">;
+        Update: never;
+        Relationships: [
+          {
+            foreignKeyName: "bill_question_messages_question_id_fkey";
+            columns: ["question_id"];
+            isOneToOne: false;
+            referencedRelation: "bill_questions";
             referencedColumns: ["id"];
           }
         ];
