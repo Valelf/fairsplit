@@ -373,7 +373,7 @@ export default function HowItWorksPage() {
 
       <div className="mt-12 flex max-w-prose flex-wrap gap-3">
         <Button asChild size="lg">
-          <Link href="/login">Set up your first house</Link>
+          <Link href="/signup">Set up your first house</Link>
         </Button>
         <Button asChild size="lg" variant="outline">
           <Link href="/help">Read the help pages</Link>

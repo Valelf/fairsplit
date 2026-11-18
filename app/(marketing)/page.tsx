@@ -109,7 +109,7 @@ export default function LandingPage() {
               <Link href="/login">Sign in</Link>
             </Button>
             <Button asChild>
-              <Link href="/login">Start free</Link>
+              <Link href="/signup">Start free</Link>
             </Button>
           </div>
         </div>
@@ -129,7 +129,7 @@ export default function LandingPage() {
             </p>
             <div className="flex flex-wrap gap-3">
               <Button asChild size="lg">
-                <Link href="/login">Set up your first house</Link>
+                <Link href="/signup">Set up your first house</Link>
               </Button>
               <Button asChild size="lg" variant="outline">
                 <a href="#how">See how it works</a>
@@ -256,7 +256,7 @@ export default function LandingPage() {
                     variant={plan.featured ? "default" : "outline"}
                     className={plan.featured ? "focus-visible:ring-offset-rail" : undefined}
                   >
-                    <Link href="/login">{plan.cta}</Link>
+                    <Link href="/signup">{plan.cta}</Link>
                   </Button>
                 </article>
               ))}
