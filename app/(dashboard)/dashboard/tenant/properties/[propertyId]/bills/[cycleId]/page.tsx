@@ -20,6 +20,7 @@ import { FlagStatusBadge } from "@/components/tenant/flag-status-badge";
 import { DownloadInvoiceButton } from "@/components/shared/download-invoice-button";
 import { PaySharePanel } from "@/components/tenant/pay-share-panel";
 import { buildPaymentNote, displayStatus, summarizeSplits } from "@/lib/payments";
+import { splitMathShort, splitMathText } from "@/lib/calculations/split-text";
 
 interface PageProps {
   params: { propertyId: string; cycleId: string };
@@ -80,6 +81,18 @@ export default async function TenantCycleDetailPage({ params }: PageProps) {
 
   // Create a map of billId -> my split
   const mySplitsMap = new Map(mySplits?.map((s) => [s.bill_id, s]) || []);
+
+  // Bills I'm excluded from (split rules), with the landlord's reason
+  const { data: myExclusions } = await supabase
+    .from("bill_split_exclusions")
+    .select("bill_id, reason")
+    .eq("property_tenant_id", tenantRecord.id)
+    .in("bill_id", bills?.map((b) => b.id) || []);
+  const myExclusionMap = new Map(myExclusions?.map((e) => [e.bill_id, e.reason]) || []);
+  const noShareText = (billId: string) =>
+    myExclusionMap.has(billId)
+      ? `Not included${myExclusionMap.get(billId) ? `: ${myExclusionMap.get(billId)}` : ""}`
+      : "No days";
 
   // Check transparency level - if full, fetch all splits
   let allSplits: any[] = [];
@@ -183,7 +196,11 @@ export default async function TenantCycleDetailPage({ params }: PageProps) {
       <Card>
         <CardHeader>
           <CardTitle>Your breakdown</CardTitle>
-          <CardDescription>Each bill is split by the days you lived here.</CardDescription>
+          <CardDescription>
+            {bills?.some((b) => b.split_method === "equal_present")
+              ? "Bills are split by the days you lived here, except those marked as split equally among everyone who lived here."
+              : "Each bill is split by the days you lived here."}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {bills && bills.length > 0 ? (
@@ -199,8 +216,8 @@ export default async function TenantCycleDetailPage({ params }: PageProps) {
                         <p className="truncate text-sm text-muted-foreground">{bill.provider}</p>
                         <p className="figure text-xs text-muted-foreground">
                           {mySplit
-                            ? `${mySplit.person_days} of ${mySplit.total_person_days} days`
-                            : "No days"}
+                            ? splitMathText(mySplit, bill.split_method)
+                            : noShareText(bill.id)}
                           {" · "}
                           {formatCents(bill.amount_cents)} bill
                         </p>
@@ -247,11 +264,11 @@ export default async function TenantCycleDetailPage({ params }: PageProps) {
                           </TableCell>
                           <TableCell className="figure text-right text-muted-foreground">
                             {mySplit ? (
-                              <>
-                                {mySplit.person_days} / {mySplit.total_person_days}
-                              </>
+                              <span title={splitMathText(mySplit, bill.split_method)}>
+                                {splitMathShort(mySplit, bill.split_method)}
+                              </span>
                             ) : (
-                              "—"
+                              <span title={noShareText(bill.id)}>—</span>
                             )}
                           </TableCell>
                           <TableCell className="figure text-right font-medium">
@@ -354,7 +371,9 @@ export default async function TenantCycleDetailPage({ params }: PageProps) {
                               <div className="figure">{formatCents(amount)}</div>
                               {split && split.person_days > 0 && (
                                 <div className="figure text-xs text-muted-foreground">
-                                  {split.person_days}d / {split.total_person_days}d
+                                  {bill.split_method === "equal_present"
+                                    ? splitMathShort(split, bill.split_method)
+                                    : `${split.person_days}d / ${split.total_person_days}d`}
                                 </div>
                               )}
                             </TableCell>
