@@ -172,7 +172,10 @@ export default function LandingPage() {
                 One loop a month
               </h2>
               <p className="mt-3 text-muted-foreground">
-                The same four steps every billing cycle, for every house.
+                The same four steps every billing cycle, for every house.{" "}
+                <Link href="/how-it-works" className="rounded-sm font-medium text-primary underline decoration-primary/30 underline-offset-4 hover:decoration-primary">
+                  See the math worked through
+                </Link>
               </p>
             </div>
             <ol className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
@@ -292,6 +295,11 @@ export default function LandingPage() {
             <a href="#how" className="rounded-sm hover:text-rail-active-foreground">How it works</a>
             <a href="#pricing" className="rounded-sm hover:text-rail-active-foreground">Pricing</a>
             <a href="#faq" className="rounded-sm hover:text-rail-active-foreground">Questions</a>
+            <Link href="/how-it-works" className="rounded-sm hover:text-rail-active-foreground">The split, explained</Link>
+            <Link href="/help" className="rounded-sm hover:text-rail-active-foreground">Help</Link>
+            <Link href="/resources/lease-addendum" className="rounded-sm hover:text-rail-active-foreground">Lease addendum</Link>
+            <Link href="/terms" className="rounded-sm hover:text-rail-active-foreground">Terms</Link>
+            <Link href="/privacy" className="rounded-sm hover:text-rail-active-foreground">Privacy</Link>
             <Link href="/login" className="rounded-sm hover:text-rail-active-foreground">Sign in</Link>
           </nav>
         </div>
