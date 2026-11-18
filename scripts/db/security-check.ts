@@ -59,6 +59,62 @@ async function signIn(email: string) {
   const ping = await anonClient.rpc("ping");
   check("keep-alive ping RPC works anonymously", !ping.error, ping.error?.message);
 
+  // ---- Review checks (2026-11-18): RPCs, cross-property integrity, become_owner abuse ----
+  const anonOwner = await anonClient.rpc("become_owner");
+  check("anonymous cannot call become_owner", !!anonOwner.error, anonOwner.error?.message);
+  const anonPaid = await anonClient.rpc("mark_cycle_paid", { p_cycle_id: crypto.randomUUID() });
+  check("anonymous cannot call mark_cycle_paid", !!anonPaid.error, anonPaid.error?.message);
+
+  const navyaOwner = await navya.c.rpc("become_owner");
+  const { data: navyaRole } = await service.from("profiles").select("role").eq("id", navya.uid).single();
+  check("linked tenant cannot become_owner", !!navyaOwner.error && navyaRole?.role === "tenant", navyaOwner.error?.message);
+
+  const { data: mck } = await service.from("properties").select("id").eq("name", "575 McKinney").single();
+  const navyaRecalc = await navya.c.rpc("recalculate_property_splits", { p_property_id: mck!.id });
+  check("tenant cannot recalculate splits", !!navyaRecalc.error, navyaRecalc.error?.message);
+
+  const shekar = await signIn("shekar@example.com");
+  const { data: mckCycle } = await service.from("billing_cycles").select("id").eq("property_id", mck!.id).limit(1).single();
+  const crossBill = await shekar.c
+    .from("bills")
+    .insert({
+      cycle_id: mckCycle!.id, property_id: frisco!.id, category: "other", provider: "probe",
+      amount_cents: 100, service_start: "2026-01-01", service_end: "2026-01-02", created_by: shekar.uid,
+    })
+    .select("id");
+  check("bill cannot reference another property's cycle", !!crossBill.error, crossBill.error?.message);
+  if (crossBill.data?.length) await service.from("bills").delete().eq("id", crossBill.data[0].id);
+
+  const hijack = await shekar.c
+    .from("property_tenants")
+    .insert({
+      property_id: frisco!.id, tenant_id: navya.uid, email: `hijack-${Date.now()}@example.invalid`,
+      display_name: "probe", join_date: "2026-01-01", status: "active",
+    })
+    .select("id");
+  check("owner cannot link a user account to a tenancy directly", !!hijack.error, hijack.error?.message);
+  if (hijack.data?.length) await service.from("property_tenants").delete().eq("id", hijack.data[0].id);
+
+  // A landlord demoted by an admin must not be able to promote themselves back.
+  const demotedEmail = `demoted-probe-${Date.now()}@example.com`;
+  const demotedPw = crypto.randomUUID();
+  const demoted = await service.auth.admin.createUser({ email: demotedEmail, password: demotedPw, email_confirm: true });
+  const demotedId = demoted.data.user!.id;
+  try {
+    await service.from("audit_log").insert({
+      user_id: demotedId, action: "change_role", table_name: "profiles", record_id: demotedId,
+      old_data: { role: "owner" }, new_data: { role: "tenant" },
+    });
+    const dc = createClient(url, anon, { auth: { persistSession: false } });
+    await dc.auth.signInWithPassword({ email: demotedEmail, password: demotedPw });
+    const back = await dc.rpc("become_owner");
+    const { data: dRole } = await service.from("profiles").select("role").eq("id", demotedId).single();
+    check("admin-demoted account cannot become_owner again", !!back.error && dRole?.role === "tenant", back.error?.message);
+  } finally {
+    await service.from("audit_log").delete().eq("record_id", demotedId);
+    await service.auth.admin.deleteUser(demotedId);
+  }
+
   console.log(failures ? `\n${failures} check(s) FAILED` : "\nAll checks passed.");
   process.exit(failures ? 1 : 0);
 })().catch((e) => { console.error(e.message ?? e); process.exit(1); });
