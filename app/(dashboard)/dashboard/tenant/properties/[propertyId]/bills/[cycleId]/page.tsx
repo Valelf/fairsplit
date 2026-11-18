@@ -13,19 +13,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { AlertTriangle, Receipt } from "lucide-react";
+import { MessageCircleQuestion, Receipt } from "lucide-react";
 import { formatCents, formatDateRange } from "@/lib/utils";
-import { BillFlagForm } from "@/components/tenant/bill-flag-form";
-import { FlagStatusBadge } from "@/components/tenant/flag-status-badge";
+import { BillQuestionSheet, type TenantBillThread } from "@/components/tenant/bill-question-sheet";
 import { DownloadInvoiceButton } from "@/components/shared/download-invoice-button";
 import { PaySharePanel } from "@/components/tenant/pay-share-panel";
 import { buildPaymentNote, displayStatus, summarizeSplits } from "@/lib/payments";
 
 interface PageProps {
   params: { propertyId: string; cycleId: string };
+  searchParams?: { question?: string };
 }
 
-export default async function TenantCycleDetailPage({ params }: PageProps) {
+export default async function TenantCycleDetailPage({ params, searchParams }: PageProps) {
   const supabase = createClient();
 
   const {
@@ -71,12 +71,35 @@ export default async function TenantCycleDetailPage({ params }: PageProps) {
     .eq("tenant_id", tenantRecord.id)
     .in("bill_id", bills?.map((b) => b.id) || []);
 
-  // Fetch my existing flags for bills in this cycle
-  const { data: myFlags } = await supabase
-    .from("bill_flags")
-    .select("id, bill_id, status")
-    .eq("flagged_by", user.id)
-    .in("bill_id", bills?.map((b) => b.id) || []);
+  // My questions on this cycle's bills (RLS: only my own threads), latest thread per bill
+  const { data: myQuestions } = await supabase
+    .from("bill_questions")
+    .select("id, bill_id, status, created_at")
+    .eq("asked_by", user.id)
+    .in("bill_id", bills?.map((b) => b.id) || [])
+    .order("created_at", { ascending: false });
+  const { data: myQuestionMessages } = await supabase
+    .from("bill_question_messages")
+    .select("id, question_id, author_id, body, created_at")
+    .in("question_id", myQuestions?.map((q) => q.id) || [])
+    .order("created_at", { ascending: true });
+  const threadByBill = new Map<string, TenantBillThread>();
+  for (const q of myQuestions ?? []) {
+    if (threadByBill.has(q.bill_id)) continue;
+    threadByBill.set(q.bill_id, {
+      id: q.id,
+      status: q.status,
+      messages: (myQuestionMessages ?? [])
+        .filter((m) => m.question_id === q.id)
+        .map((m) => ({
+          id: m.id,
+          body: m.body,
+          created_at: m.created_at,
+          mine: m.author_id === user.id,
+          authorLabel: m.author_id === user.id ? "You" : "Landlord",
+        })),
+    });
+  }
 
   // Create a map of billId -> my split
   const mySplitsMap = new Map(mySplits?.map((s) => [s.bill_id, s]) || []);
@@ -385,51 +408,41 @@ export default async function TenantCycleDetailPage({ params }: PageProps) {
           </Card>
         )}
 
-      {/* Flag Bills */}
-      {cycle.status === "open" && bills && bills.length > 0 && (
+      {/* Questions about a bill */}
+      {cycle.status !== "draft" && bills && bills.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-warning-soft-foreground" aria-hidden="true" />
-              See an issue?
+              <MessageCircleQuestion className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+              Questions about a bill?
             </CardTitle>
             <CardDescription>
-              Flag a bill if something looks wrong. Your landlord is notified and can review it.
+              Ask your landlord directly. Only the two of you see the conversation.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <ul className="space-y-2">
-              {bills.map((bill) => {
-                const existingFlag = myFlags?.find(
-                  (f) => f.bill_id === bill.id
-                );
-                return (
-                  <li
-                    key={bill.id}
-                    className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium capitalize">
-                        {bill.category}
-                      </p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {bill.provider}{" "}
-                        <span className="figure">{formatCents(bill.amount_cents)}</span>
-                      </p>
-                    </div>
-                    {existingFlag ? (
-                      <FlagStatusBadge status={existingFlag.status as any} />
-                    ) : (
-                      <BillFlagForm
-                        billId={bill.id}
-                        billCategory={bill.category}
-                        billProvider={bill.provider}
-                        billAmountCents={bill.amount_cents}
-                      />
-                    )}
-                  </li>
-                );
-              })}
+              {bills.map((bill) => (
+                <li
+                  key={bill.id}
+                  className="flex flex-col gap-2 rounded-lg border px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium capitalize">{bill.category}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {bill.provider} <span className="figure">{formatCents(bill.amount_cents)}</span>
+                    </p>
+                  </div>
+                  <BillQuestionSheet
+                    billId={bill.id}
+                    category={bill.category}
+                    provider={bill.provider}
+                    amountCents={bill.amount_cents}
+                    thread={threadByBill.get(bill.id) ?? null}
+                    defaultOpen={searchParams?.question === bill.id}
+                  />
+                </li>
+              ))}
             </ul>
           </CardContent>
         </Card>

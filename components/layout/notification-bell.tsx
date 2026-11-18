@@ -22,6 +22,7 @@ import {
   Clock,
   DollarSign,
   Eye,
+  MessageCircleQuestion,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -34,6 +35,9 @@ const typeIcons: Record<string, React.ElementType> = {
   flag_resolved: CheckCircle,
   flag_dismissed: XCircle,
   bill_adjusted: DollarSign,
+  question_asked: MessageCircleQuestion,
+  question_reply: MessageCircleQuestion,
+  question_resolved: CheckCircle,
 };
 
 function getNotificationHref(
@@ -55,9 +59,17 @@ function getNotificationHref(
     case "tenant_invited":
       return "/dashboard/tenant/properties";
     case "flag_submitted":
-      return propertyId
-        ? `/dashboard/owner/properties/${propertyId}/flags`
-        : null;
+      return "/dashboard/owner/questions";
+    case "question_asked":
+      return metadata.questionId ? `/dashboard/owner/questions/${metadata.questionId}` : "/dashboard/owner/questions";
+    case "question_reply":
+    case "question_resolved":
+      if (metadata.forRole === "tenant" || type === "question_resolved") {
+        return propertyId && cycleId
+          ? `/dashboard/tenant/properties/${propertyId}/bills/${cycleId}?question=${metadata.billId as string}`
+          : null;
+      }
+      return metadata.questionId ? `/dashboard/owner/questions/${metadata.questionId}` : "/dashboard/owner/questions";
     case "flag_under_review":
     case "flag_resolved":
     case "flag_dismissed":
