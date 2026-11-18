@@ -160,6 +160,12 @@ export type UserSubscription = {
   updated_at: string;
 };
 
+export type AppHeartbeat = {
+  id: number;
+  last_cron_at: string | null;
+  last_ping_at: string | null;
+};
+
 // Database type for Supabase client
 export interface Database {
   public: {
@@ -357,6 +363,12 @@ export interface Database {
           }
         ];
       };
+      app_heartbeat: {
+        Row: AppHeartbeat;
+        Insert: Partial<AppHeartbeat>;
+        Update: Partial<AppHeartbeat>;
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -378,6 +390,10 @@ export interface Database {
       ping: {
         Args: Record<string, never>;
         Returns: string;
+      };
+      is_admin: {
+        Args: Record<string, never>;
+        Returns: boolean;
       };
     };
     Enums: {
