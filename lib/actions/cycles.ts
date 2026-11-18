@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
-import { createNotification } from "@/lib/actions/notifications";
+import { createNotification } from "@/lib/server/notifications";
 
 const createCycleSchema = z.object({
   property_id: z.string().uuid(),

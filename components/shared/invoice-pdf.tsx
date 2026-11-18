@@ -127,7 +127,7 @@ function formatCurrency(cents: number): string {
 }
 
 function formatDate(dateStr: string): string {
-  const date = new Date(dateStr + "T00:00:00Z");
+  const date = (/^\d{4}-\d{2}-\d{2}$/.test(dateStr) ? new Date(dateStr + "T00:00:00Z") : new Date(dateStr));
   return date.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",

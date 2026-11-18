@@ -35,3 +35,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+
+# local pilot overrides (real emails)
+scripts/pilot/*.local.json

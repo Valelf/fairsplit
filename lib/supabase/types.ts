@@ -36,6 +36,7 @@ export type Property = {
 };
 
 export type PropertyTenant = {
+  invite_expires_at?: string | null;
   id: string;
   property_id: string;
   tenant_id: string | null;
@@ -52,6 +53,8 @@ export type PropertyTenant = {
 };
 
 export type BillingCycle = {
+  start_date?: string | null;
+  end_date?: string | null;
   id: string;
   property_id: string;
   label: string;
@@ -143,6 +146,8 @@ export type SubscriptionPlan = {
 };
 
 export type UserSubscription = {
+  comp_until?: string | null;
+  comp_note?: string | null;
   id: string;
   user_id: string;
   plan_id: string;
@@ -357,7 +362,23 @@ export interface Database {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      get_invite: {
+        Args: { p_token: string };
+        Returns: {
+          property_name: string;
+          display_name: string;
+          email: string;
+          invite_status: "valid" | "claimed" | "expired" | "invalid";
+        }[];
+      };
+      claim_invite: {
+        Args: { p_token: string };
+        Returns: string;
+      };
+      ping: {
+        Args: Record<string, never>;
+        Returns: string;
+      };
     };
     Enums: {
       [_ in never]: never;

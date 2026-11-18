@@ -3,31 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
-export async function createNotification(
-  userId: string,
-  type: string,
-  title: string,
-  body?: string,
-  metadata?: Record<string, unknown>
-) {
-  const supabase = createClient();
-
-  const { error } = await supabase.from("notifications").insert({
-    user_id: userId,
-    type,
-    title,
-    body: body || null,
-    metadata: metadata || {},
-    is_read: false,
-  });
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  return { success: true };
-}
-
 export async function markNotificationAsRead(notificationId: string) {
   const supabase = createClient();
 

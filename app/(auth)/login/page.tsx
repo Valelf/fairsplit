@@ -164,14 +164,6 @@ export default function LoginPage() {
                     )}
                     Sign In
                   </Button>
-
-                  <div className="text-xs text-center text-muted-foreground space-y-1">
-                    <p className="font-medium">Test Accounts:</p>
-                    <p>Admin: admin@example.com</p>
-                    <p>Owner: shekar@example.com</p>
-                    <p>Tenant: val@example.com</p>
-                    <p className="mt-1">Password: demo123!</p>
-                  </div>
                 </form>
               </TabsContent>
 

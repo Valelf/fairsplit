@@ -8,6 +8,9 @@ import Link from "next/link";
 import { getTenantSpendingTrend } from "@/lib/queries/analytics";
 import { SpendingTrendChart } from "@/components/shared/spending-trend-chart";
 
+// Valid UUID that matches no row; keeps .in() queries valid when the list is empty.
+const NO_MATCH_UUID = "00000000-0000-0000-0000-000000000000";
+
 export default async function TenantDashboardPage() {
   const supabase = createClient();
 
@@ -31,7 +34,7 @@ export default async function TenantDashboardPage() {
   const { data: splits } = await supabase
     .from("bill_splits")
     .select("amount_cents")
-    .in("tenant_id", tenantIds.length > 0 ? tenantIds : ["none"]);
+    .in("tenant_id", tenantIds.length > 0 ? tenantIds : [NO_MATCH_UUID]);
 
   const totalOwedCents = splits?.reduce((sum, s) => sum + s.amount_cents, 0) || 0;
 
@@ -40,7 +43,7 @@ export default async function TenantDashboardPage() {
   const { count: cycleCount } = await supabase
     .from("billing_cycles")
     .select("*", { count: "exact", head: true })
-    .in("property_id", propertyIds.length > 0 ? propertyIds : ["none"]);
+    .in("property_id", propertyIds.length > 0 ? propertyIds : [NO_MATCH_UUID]);
 
   // Analytics
   const spendingTrend = await getTenantSpendingTrend(tenantIds);

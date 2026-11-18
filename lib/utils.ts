@@ -12,8 +12,13 @@ export function formatCents(cents: number): string {
   }).format(cents / 100);
 }
 
+/** Parse "YYYY-MM-DD" as UTC midnight; full ISO timestamps are parsed as-is. */
+export function parseDateUTC(dateStr: string): Date {
+  return /^\d{4}-\d{2}-\d{2}$/.test(dateStr) ? new Date(dateStr + "T00:00:00Z") : new Date(dateStr);
+}
+
 export function formatDate(dateStr: string): string {
-  const date = new Date(dateStr + "T00:00:00Z");
+  const date = parseDateUTC(dateStr);
   return date.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -23,8 +28,8 @@ export function formatDate(dateStr: string): string {
 }
 
 export function formatDateRange(start: string, end: string): string {
-  const startDate = new Date(start + "T00:00:00Z");
-  const endDate = new Date(end + "T00:00:00Z");
+  const startDate = parseDateUTC(start);
+  const endDate = parseDateUTC(end);
 
   const startMonth = startDate.toLocaleDateString("en-US", {
     month: "short",

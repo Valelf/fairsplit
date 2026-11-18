@@ -10,6 +10,9 @@ import { getOwnerSpendingTrend, getOwnerCategoryBreakdown } from "@/lib/queries/
 import { SpendingTrendChart } from "@/components/shared/spending-trend-chart";
 import { CategoryBreakdownChart } from "@/components/shared/category-breakdown-chart";
 
+// Valid UUID that matches no row; keeps .in() queries valid when the list is empty.
+const NO_MATCH_UUID = "00000000-0000-0000-0000-000000000000";
+
 export default async function OwnerDashboardPage() {
   const supabase = createClient();
 
@@ -32,14 +35,14 @@ export default async function OwnerDashboardPage() {
   const { count: tenantCount } = await supabase
     .from("property_tenants")
     .select("*", { count: "exact", head: true })
-    .in("property_id", propertyIds.length > 0 ? propertyIds : ["none"])
+    .in("property_id", propertyIds.length > 0 ? propertyIds : [NO_MATCH_UUID])
     .eq("status", "active");
 
   // Fetch total billed
   const { data: bills } = await supabase
     .from("bills")
     .select("amount_cents")
-    .in("property_id", propertyIds.length > 0 ? propertyIds : ["none"]);
+    .in("property_id", propertyIds.length > 0 ? propertyIds : [NO_MATCH_UUID]);
 
   const totalBilledCents = bills?.reduce((sum, b) => sum + b.amount_cents, 0) || 0;
 
@@ -47,7 +50,7 @@ export default async function OwnerDashboardPage() {
   const { count: activeCycles } = await supabase
     .from("billing_cycles")
     .select("*", { count: "exact", head: true })
-    .in("property_id", propertyIds.length > 0 ? propertyIds : ["none"])
+    .in("property_id", propertyIds.length > 0 ? propertyIds : [NO_MATCH_UUID])
     .in("status", ["draft", "open"]);
 
   // Analytics

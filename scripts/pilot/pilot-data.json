@@ -1,0 +1,50 @@
+{
+  "_note": "Pilot data for Shekar (founding customer). Emails are placeholders; real ones go in pilot-data.local.json (gitignored) or are edited in the app. Amounts in cents, dates UTC.",
+  "owner": { "email": "shekar@example.com", "fullName": "Shekar" },
+  "foundingPlan": { "plan": "Pro", "compUntil": "2027-11-18", "note": "Founding customer: Pro free for 1 year (extendable by admin)" },
+  "properties": [
+    {
+      "key": "mckinney",
+      "name": "575 McKinney",
+      "address_line1": "575 McKinney (street address TBD)",
+      "city": "McKinney",
+      "state": "TX",
+      "zip_code": "75070",
+      "tenants": [
+        { "key": "anil", "display_name": "Anil", "email": "anil@example.com", "join_date": "2025-01-01", "leave_date": "2025-10-30" },
+        { "key": "navya", "display_name": "Navya", "email": "navya@example.com", "join_date": "2025-10-01" },
+        { "key": "vineesh", "display_name": "Vineesh", "email": "vineesh@example.com", "join_date": "2025-10-01" },
+        { "key": "val", "display_name": "Val", "email": "val@example.com", "join_date": "2025-10-11" },
+        { "key": "divya", "display_name": "Divya", "email": "divya@example.com", "join_date": "2025-11-10" }
+      ],
+      "cycles": [
+        {
+          "label": "Sept – Oct 2025", "start_date": "2025-09-15", "end_date": "2025-10-21", "status": "closed",
+          "bills": [
+            { "category": "internet", "provider": "Spectrum", "amount_cents": 9549, "service_start": "2025-09-16", "service_end": "2025-10-15" },
+            { "category": "electricity", "provider": "CoServ", "amount_cents": 27600, "service_start": "2025-09-15", "service_end": "2025-10-14" },
+            { "category": "water", "provider": "City of McKinney", "amount_cents": 13293, "service_start": "2025-09-16", "service_end": "2025-10-21" }
+          ]
+        },
+        {
+          "label": "Oct – Nov 2025", "start_date": "2025-10-14", "end_date": "2025-11-17", "status": "closed",
+          "bills": [
+            { "category": "internet", "provider": "Spectrum", "amount_cents": 9549, "service_start": "2025-10-16", "service_end": "2025-11-15" },
+            { "category": "electricity", "provider": "CoServ", "amount_cents": 22000, "service_start": "2025-10-14", "service_end": "2025-11-12" },
+            { "category": "water", "provider": "City of McKinney", "amount_cents": 11359, "service_start": "2025-10-21", "service_end": "2025-11-17" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "frisco",
+      "name": "Frisco house",
+      "address_line1": "Frisco house (street address TBD)",
+      "city": "Frisco",
+      "state": "TX",
+      "zip_code": "TBD",
+      "tenants": [],
+      "cycles": []
+    }
+  ]
+}

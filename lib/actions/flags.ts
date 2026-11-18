@@ -2,9 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { createNotification } from "@/lib/actions/notifications";
+import { createNotification } from "@/lib/server/notifications";
 import { notifyUser } from "@/lib/notifications/notify";
-import { calculateAndStoreSplits } from "@/lib/actions/bills";
+import { calculateAndStoreSplits } from "@/lib/server/splits";
 import { flagSubmittedEmail } from "@/lib/email/templates/flag-submitted";
 import { flagResolvedEmail } from "@/lib/email/templates/flag-resolved";
 import { z } from "zod";
@@ -110,7 +110,7 @@ export async function submitFlag(input: z.infer<typeof submitFlagSchema>) {
       provider: bill.provider,
       reason: parsed.data.reason,
       propertyName: property.name,
-      flagsUrl: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001"}/dashboard/owner/properties/${bill.property_id}/flags`,
+      flagsUrl: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard/owner/properties/${bill.property_id}/flags`,
     });
 
     await notifyUser({
@@ -269,7 +269,7 @@ export async function resolveFlag(input: z.infer<typeof resolveFlagSchema>) {
     resolutionNote: parsed.data.resolutionNote,
     resolved: true,
     propertyName: property?.name || "Property",
-    dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001"}/dashboard/tenant/properties/${flag.property_id}/bills`,
+    dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard/tenant/properties/${flag.property_id}/bills`,
   });
 
   // Notify the flagging tenant

@@ -3,11 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
-import {
-  calculateBillSplitCents,
-  type TenantPeriod,
-} from "@/lib/calculations/person-days";
-import { createNotification } from "@/lib/actions/notifications";
+import { createNotification } from "@/lib/server/notifications";
+import { calculateAndStoreSplits } from "@/lib/server/splits";
 
 const createBillSchema = z.object({
   cycle_id: z.string().uuid(),
@@ -124,61 +121,6 @@ export async function createBill(input: CreateBillInput) {
   revalidatePath(`/dashboard/owner/properties/${parsed.data.property_id}`);
 
   return { data: bill };
-}
-
-export async function calculateAndStoreSplits(
-  billId: string,
-  propertyId: string,
-  amountCents: number,
-  serviceStart: string,
-  serviceEnd: string
-): Promise<string | null> {
-  const supabase = createClient();
-
-  // Fetch all tenants for this property
-  const { data: tenants, error: tenantError } = await supabase
-    .from("property_tenants")
-    .select("id, join_date, leave_date")
-    .eq("property_id", propertyId);
-
-  if (tenantError) {
-    return tenantError.message;
-  }
-
-  if (!tenants || tenants.length === 0) {
-    return null; // No tenants to split with
-  }
-
-  const tenantPeriods: TenantPeriod[] = tenants.map((t) => ({
-    tenantId: t.id,
-    joinDate: t.join_date,
-    leaveDate: t.leave_date,
-  }));
-
-  const splits = calculateBillSplitCents(
-    { amountCents, serviceStart, serviceEnd },
-    tenantPeriods
-  );
-
-  // Insert all splits
-  const splitRows = splits.map((s) => ({
-    bill_id: billId,
-    property_id: propertyId,
-    tenant_id: s.tenantId,
-    person_days: s.personDays,
-    total_person_days: s.totalPersonDays,
-    amount_cents: s.amountCents,
-  }));
-
-  const { error: splitError } = await supabase
-    .from("bill_splits")
-    .insert(splitRows);
-
-  if (splitError) {
-    return splitError.message;
-  }
-
-  return null;
 }
 
 export async function deleteBill(billId: string) {

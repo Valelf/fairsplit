@@ -6,8 +6,10 @@
  * 1. For each bill, iterate through every day of the service period (inclusive)
  * 2. On each day, count which tenants were active (join_date <= day <= leave_date or no leave_date)
  * 3. Accumulate person-days per tenant
- * 4. Each tenant's share = bill_amount_cents * (tenant_person_days / total_person_days)
- * 5. Round to nearest cent
+ * 4. Each tenant's exact share = bill_amount_cents * (tenant_person_days / total_person_days)
+ * 5. Floor every share to whole cents, then hand the leftover cents one at a time to the
+ *    tenants with the largest fractional remainders (ties: more person-days, then input order).
+ *    This guarantees the shares sum to the bill exactly (largest-remainder method).
  */
 
 export interface TenantPeriod {
@@ -79,22 +81,50 @@ export function calculateBillSplitCents(
     0
   );
 
-  // Calculate each tenant's share
-  return tenants.map((tenant) => {
-    const days = personDaysMap.get(tenant.tenantId) ?? 0;
+  const rows = tenants.map((tenant, index) => ({
+    tenantId: tenant.tenantId,
+    personDays: personDaysMap.get(tenant.tenantId) ?? 0,
+    totalPersonDays,
+    amountCents: 0,
+    index,
+  }));
+  return allocate(bill.amountCents, rows);
+}
 
-    let amountCents = 0;
-    if (totalPersonDays > 0 && days > 0) {
-      amountCents = Math.round((bill.amountCents * days) / totalPersonDays);
-    }
-
-    return {
-      tenantId: tenant.tenantId,
-      personDays: days,
-      totalPersonDays,
-      amountCents,
-    };
+/** Largest-remainder allocation of whole cents by person-days. */
+function allocate(
+  amountCents: number,
+  rows: Array<SplitResult & { index: number }>
+): SplitResult[] {
+  const total = rows[0]?.totalPersonDays ?? 0;
+  if (total === 0) {
+    return rows.map(({ index: _index, ...r }) => ({ ...r, amountCents: 0 }));
+  }
+  const withShares = rows.map((r) => {
+    const exact = (amountCents * r.personDays) / total;
+    const floor = Math.floor(exact);
+    return { ...r, floor, remainder: exact - floor };
   });
+  let leftover = amountCents - withShares.reduce((sum, r) => sum + r.floor, 0);
+  const order = [...withShares]
+    .filter((r) => r.personDays > 0)
+    .sort(
+      (a, b) =>
+        b.remainder - a.remainder ||
+        b.personDays - a.personDays ||
+        a.index - b.index
+    );
+  const bonus = new Map<number, number>();
+  for (let i = 0; leftover > 0 && order.length > 0; i = (i + 1) % order.length) {
+    bonus.set(order[i].index, (bonus.get(order[i].index) ?? 0) + 1);
+    leftover -= 1;
+  }
+  return withShares.map((r) => ({
+    tenantId: r.tenantId,
+    personDays: r.personDays,
+    totalPersonDays: r.totalPersonDays,
+    amountCents: r.floor + (bonus.get(r.index) ?? 0),
+  }));
 }
 
 /**
