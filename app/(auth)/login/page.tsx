@@ -193,6 +193,12 @@ export default function LoginPage() {
               </TabsContent>
             </Tabs>
           )}
+          <p className="mt-6 text-center text-sm text-muted-foreground">
+            New landlord?{" "}
+            <a href="/signup" className="font-medium text-foreground underline underline-offset-4">
+              Create an account
+            </a>
+          </p>
         </div>
     </AuthFrame>
   );

@@ -492,6 +492,10 @@ export interface Database {
         Args: { p_property_id: string };
         Returns: boolean;
       };
+      become_owner: {
+        Args: Record<string, never>;
+        Returns: string;
+      };
     };
     Enums: {
       [_ in never]: never;
