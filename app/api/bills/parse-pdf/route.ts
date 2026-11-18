@@ -8,7 +8,7 @@ import { BILL_CATEGORY_VALUES } from "@/lib/utilities/categories";
 const MAX_PDF_BYTES = 10 * 1024 * 1024;
 
 const requestSchema = z.object({
-  property_id: z.string().uuid("Invalid property"),
+  property_id: z.string({ error: "Invalid property" }).uuid("Invalid property"),
   file: z
     .instanceof(File, { message: "PDF file required" })
     .refine((f) => f.type === "application/pdf", "PDF file required")
