@@ -18,6 +18,8 @@ import { formatCents, formatDate, formatDateRange } from "@/lib/utils";
 import Link from "next/link";
 import { PropertySettings } from "@/components/owner/property-settings";
 import { TenantRowActions } from "@/components/owner/tenant-row-actions";
+import { UtilityAccountsCard } from "@/components/owner/utility-accounts-card";
+import { getUtilityAccountsWithLastBill } from "@/lib/server/utility-accounts";
 
 interface PageProps {
   params: { propertyId: string };
@@ -69,6 +71,9 @@ export default async function PropertyOverviewPage({ params }: PageProps) {
 
   const totalBilledCents = bills?.reduce((sum, b) => sum + b.amount_cents, 0) || 0;
 
+  const utilityAccounts = await getUtilityAccountsWithLastBill(property.id);
+  const openCycleId = cycles?.find((c) => c.status !== "closed")?.id ?? null;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-4">
@@ -114,6 +119,12 @@ export default async function PropertyOverviewPage({ params }: PageProps) {
           icon={<Calendar className="h-4 w-4" />}
         />
       </div>
+
+      <UtilityAccountsCard
+        propertyId={property.id}
+        accounts={utilityAccounts}
+        openCycleId={openCycleId}
+      />
 
       <Tabs defaultValue="tenants" className="space-y-4">
         <TabsList>

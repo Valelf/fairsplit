@@ -10,13 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createFirstCycleAndBill } from "@/lib/actions/onboarding";
 import { BILL_CATEGORIES, firstBillSchema, firstIssue } from "@/lib/onboarding/steps";
+import { BILL_CATEGORY_LABELS } from "@/lib/utilities/categories";
 
-const CATEGORY_LABELS: Record<(typeof BILL_CATEGORIES)[number], string> = {
-  electricity: "Electricity",
-  water: "Water",
-  internet: "Internet",
-  other: "Other",
-};
+const CATEGORY_LABELS = BILL_CATEGORY_LABELS;
 
 interface FirstBillStepFormProps {
   propertyId: string;
