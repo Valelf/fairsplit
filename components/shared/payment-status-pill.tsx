@@ -4,10 +4,10 @@ import { cn } from "@/lib/utils";
 import { PAYMENT_STATUS_LABELS, type DisplayPaymentStatus } from "@/lib/payments";
 
 const VARIANTS: Record<DisplayPaymentStatus, { variant: BadgeProps["variant"]; icon: React.ElementType }> = {
-  owed: { variant: "outline", icon: Circle },
-  marked_paid: { variant: "secondary", icon: Clock },
-  confirmed: { variant: "default", icon: CheckCircle2 },
-  overdue: { variant: "destructive", icon: AlertCircle },
+  owed: { variant: "warning", icon: Circle },
+  marked_paid: { variant: "info", icon: Clock },
+  confirmed: { variant: "success", icon: CheckCircle2 },
+  overdue: { variant: "danger", icon: AlertCircle },
 };
 
 interface PaymentStatusPillProps {
