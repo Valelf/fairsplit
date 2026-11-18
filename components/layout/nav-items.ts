@@ -5,6 +5,7 @@ import {
   Settings,
   ClipboardList,
   Wallet,
+  MessageCircleQuestion,
   type LucideIcon,
 } from "lucide-react";
 import type { UserRole } from "@/lib/supabase/types";
@@ -28,6 +29,7 @@ const ownerNav: NavItem[] = [
   { label: "Dashboard", href: "/dashboard/owner/dashboard", icon: LayoutDashboard },
   { label: "Properties", href: "/dashboard/owner/properties", icon: Building2 },
   { label: "Payments", href: "/dashboard/owner/payments", icon: Wallet },
+  { label: "Questions", href: "/dashboard/owner/questions", icon: MessageCircleQuestion },
   { label: "Settings", href: "/dashboard/owner/settings", icon: Settings },
 ];
 
