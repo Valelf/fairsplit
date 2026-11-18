@@ -8,7 +8,7 @@ import type { OwnerPaymentMethods, PaymentStatus } from "@/lib/supabase/types";
 export type { OwnerPaymentMethods, PaymentStatus };
 export type DisplayPaymentStatus = PaymentStatus | "overdue";
 
-type SplitLike = { amount_cents: number; payment_status: PaymentStatus | string | null };
+type SplitLike = { amount_cents: number; payment_status?: PaymentStatus | string | null };
 
 export type PaymentSummary = {
   totalCents: number;

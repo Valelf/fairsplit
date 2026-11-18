@@ -17,6 +17,8 @@ import Link from "next/link";
 import { BillFlagForm } from "@/components/tenant/bill-flag-form";
 import { FlagStatusBadge } from "@/components/tenant/flag-status-badge";
 import { DownloadInvoiceButton } from "@/components/shared/download-invoice-button";
+import { PaySharePanel } from "@/components/tenant/pay-share-panel";
+import { buildPaymentNote, displayStatus, summarizeSplits } from "@/lib/payments";
 
 interface PageProps {
   params: { propertyId: string; cycleId: string };
@@ -98,6 +100,17 @@ export default async function TenantCycleDetailPage({ params }: PageProps) {
     allTenants = tenants || [];
   }
 
+  // Payment status + the owner's payment handles (readable by their tenants via RLS)
+  const { data: paymentMethods } = await supabase
+    .from("owner_payment_methods")
+    .select("*")
+    .eq("owner_id", property.owner_id)
+    .maybeSingle();
+  const payment = summarizeSplits(mySplits ?? []);
+  const lastMarked = (mySplits ?? [])
+    .filter((s) => s.payment_status === "marked_paid")
+    .sort((a, b) => (b.marked_paid_at ?? "").localeCompare(a.marked_paid_at ?? ""))[0];
+
   const totalBilledCents =
     bills?.reduce((sum, b) => sum + b.amount_cents, 0) || 0;
   const myTotalCents =
@@ -178,6 +191,23 @@ export default async function TenantCycleDetailPage({ params }: PageProps) {
           </CardContent>
         </Card>
       </div>
+
+      {cycle.status !== "draft" && (
+      <PaySharePanel
+        cycleId={cycle.id}
+        propertyId={params.propertyId}
+        owedCents={payment.owedCents}
+        markedPaidCents={payment.markedPaidCents}
+        confirmedCents={payment.confirmedCents}
+        status={displayStatus(payment.status, cycle.due_date)}
+        dueDate={cycle.due_date ?? null}
+        methods={paymentMethods ?? null}
+        payeeName={paymentMethods?.payee_name}
+        note={buildPaymentNote(property.name, cycle.label)}
+        lastNote={lastMarked?.payment_note}
+        markedPaidAt={lastMarked?.marked_paid_at}
+      />
+      )}
 
       {/* My Bill Breakdown (always shown) */}
       <Card>
