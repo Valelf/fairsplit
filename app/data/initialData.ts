@@ -103,7 +103,8 @@ export const octNovCycle: CycleInput = {
 // ---------------------------------------------------------------------------
 // 2026 cycles (added Nov 2026). The two 2025 cycles above are untouched and
 // still display their pre-calculated results.
-// Each 2026 cycle groups the three bills issued in that month.
+// Each 2026 cycle groups the three bills issued in one month and is labelled
+// by the service period they cover (internet is billed a month ahead).
 // ---------------------------------------------------------------------------
 
 // Residents for the 2026 cycles. Anil (left Oct 2025) is not included.
@@ -147,7 +148,7 @@ const aug2026Bills: Bill[] = [
 
 export const aug2026Cycle: CycleInput = {
   id: "aug-2026",
-  label: "Aug 2026",
+  label: "Jul – Aug 2026",
   bills: aug2026Bills,
   people: people2026,
 };
@@ -182,7 +183,7 @@ const sep2026Bills: Bill[] = [
 
 export const sep2026Cycle: CycleInput = {
   id: "sep-2026",
-  label: "Sep 2026",
+  label: "Aug – Sep 2026",
   bills: sep2026Bills,
   people: people2026,
 };
@@ -217,7 +218,7 @@ const oct2026Bills: Bill[] = [
 
 export const oct2026Cycle: CycleInput = {
   id: "oct-2026",
-  label: "Oct 2026",
+  label: "Sep – Oct 2026",
   bills: oct2026Bills,
   people: people2026,
 };
