@@ -60,7 +60,7 @@ const septOctBills: Bill[] = [
 
 export const septOctCycle: CycleInput = {
   id: "sept-oct-2025",
-  label: "Sept – Oct",
+  label: "Sept – Oct 2025",
   bills: septOctBills,
   people: allPeople,
 };
@@ -95,7 +95,7 @@ const octNovBills: Bill[] = [
 
 export const octNovCycle: CycleInput = {
   id: "oct-nov-2025",
-  label: "Oct – Nov",
+  label: "Oct – Nov 2025",
   bills: octNovBills,
   people: allPeople,
 };

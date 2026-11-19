@@ -4,7 +4,7 @@ import { CycleResult, PersonCycleSummary } from "../types";
 export const septOctResult: CycleResult = {
   cycle: {
     id: "sept-oct-2025",
-    label: "Sept – Oct",
+    label: "Sept – Oct 2025",
   },
   billResults: [
     {
@@ -240,7 +240,7 @@ export const septOctResult: CycleResult = {
 export const octNovResult: CycleResult = {
   cycle: {
     id: "oct-nov-2025",
-    label: "Oct – Nov",
+    label: "Oct – Nov 2025",
   },
   billResults: [
     {
