@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { CycleInput, CycleResult, UtilityCategory } from "./types";
 import { calculateCycle, formatDateRange, formatShortDateRange } from "./utils/calculations";
-import { initialCycles, allPeople } from "./data/initialData";
+import { initialCycles, people2026 } from "./data/initialData";
 import { precalculatedResults } from "./data/precalculatedData";
 import AddCycleModal from "./components/AddCycleModal";
 
@@ -76,16 +76,13 @@ export default function Home() {
     const stored = localStorage.getItem("billCycles");
     if (stored) {
       try {
-        const parsed = JSON.parse(stored);
-        // Update people array in all cycles to use latest data from initialData
-        const updatedCycles = parsed.map((cycle: CycleInput, index: number) => {
-          // For first 2 cycles, always use allPeople from initialData
-          if (index < 2) {
-            return { ...cycle, people: allPeople };
-          }
-          // For new cycles, keep their custom people but update any matching IDs
-          return cycle;
-        });
+        const parsed: CycleInput[] = JSON.parse(stored);
+        // Built-in cycles always come from initialData (so bill/people fixes and
+        // newly added cycles reach returning visitors); any cycles a visitor
+        // created themselves are kept after them.
+        const builtInIds = new Set(initialCycles.map((c) => c.id));
+        const customCycles = parsed.filter((c) => !builtInIds.has(c.id));
+        const updatedCycles = [...initialCycles, ...customCycles];
         setCycles(updatedCycles);
       } catch {
         setCycles(initialCycles);
@@ -108,8 +105,8 @@ export default function Home() {
   };
 
   const handleDeleteCycle = (index: number) => {
-    // Prevent deletion of the first 2 initial cycles
-    if (index < 2) {
+    // Prevent deletion of built-in cycles
+    if (initialCycles.some((c) => c.id === cycles[index]?.id)) {
       alert("Cannot delete initial billing cycles. Only newly created cycles can be deleted.");
       return;
     }
@@ -138,7 +135,7 @@ export default function Home() {
             isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}
             onAdd={handleAddCycle}
-            existingPeople={allPeople}
+            existingPeople={people2026}
           />
         </div>
       </div>
@@ -183,7 +180,7 @@ export default function Home() {
         {/* Tabs */}
         <div className="flex gap-2 mb-8 flex-wrap">
           {cycles.map((cycle, index) => {
-            const isInitialCycle = index < 2; // First 2 cycles are locked
+            const isInitialCycle = initialCycles.some((c) => c.id === cycle.id); // Built-in cycles are locked
             const canDelete = !isInitialCycle && cycles.length > 1;
             
             return (
@@ -431,7 +428,7 @@ export default function Home() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onAdd={handleAddCycle}
-        existingPeople={allPeople}
+        existingPeople={people2026}
       />
     </div>
   );
